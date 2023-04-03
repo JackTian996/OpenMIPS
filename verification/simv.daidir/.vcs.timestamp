@@ -1,0 +1,147 @@
+2        
+0 defines.v
+0 /home/synopsys/vcs/O-2018.09-SP2/etc/systemverilog/defines.v
+33
++itf+/home/synopsys/vcs/O-2018.09-SP2/linux64/lib/vcsdp_lite.tab
++v2k
++vc
++vcsd1
++vpi
+-Mamsrun=
+-Masflags=
+-Mcc=gcc
+-Mcfl= -pipe -fPIC -O -I/home/synopsys/vcs/O-2018.09-SP2/include
+-Mcplusplus=g++
+-Mcrt0=
+-Mcrtn=
+-Mcsrc=
+-Mexternalobj=
+-Mldflags= -rdynamic
+-Mobjects= /home/synopsys/vcs/O-2018.09-SP2/linux64/lib/libvirsim.so /home/synopsys/vcs/O-2018.09-SP2/linux64/lib/liberrorinf.so /home/synopsys/vcs/O-2018.09-SP2/linux64/lib/libsnpsmalloc.so /home/synopsys/vcs/O-2018.09-SP2/linux64/lib/libvfs.so
+-Mout=simv
+-Msaverestoreobj=/home/synopsys/vcs/O-2018.09-SP2/linux64/lib/vcs_save_restore_new.o
+-Msyslibs=/home/synopsys/verdi/Verdi_O-2018.09-SP2/share/PLI/VCS/LINUX64/pli.a -ldl
+-Mvcsaceobjs=
+-Mxcflags= -pipe -fPIC -I/home/synopsys/vcs/O-2018.09-SP2/include
+-P
+-Xvcs_run_simv=1
+-debug_access+all
+-f file.lst
+-fsdb
+-full64
+-gen_obj
+-picarchive
+-sverilog
+-timescale=1ns/1ns
+/home/synopsys/vcs/O-2018.09-SP2/linux64/bin/vcs1
+/home/synopsys/verdi/Verdi_O-2018.09-SP2/share/PLI/VCS/LINUX64/verdi.tab
+79
+sysc_uni_pwd=/home/ICer/ic_prjs/open_mips/verification
+rst=rst_n
+clk=clk
+XMODIFIERS=@im=ibus
+XDG_VTNR=1
+XDG_SESSION_TYPE=x11
+XDG_SESSION_ID=1
+XDG_SESSION_DESKTOP=gnome-classic
+XDG_SEAT=seat0
+XDG_RUNTIME_DIR=/run/user/1000
+XDG_MENU_PREFIX=gnome-
+XDG_DATA_DIRS=/home/ICer/.local/share/flatpak/exports/share/:/var/lib/flatpak/exports/share/:/usr/local/share/:/usr/share/
+XDG_CURRENT_DESKTOP=GNOME-Classic:GNOME
+XAUTHORITY=/run/gdm/auth-for-ICer-z88yA0/database
+WINDOWPATH=1
+VTE_VERSION=5204
+VMR_MODE_FLAG=64
+VERDI_HOME=/home/synopsys/verdi/Verdi_O-2018.09-SP2
+VCS_MODE_FLAG=64
+VCS_HOME=/home/synopsys/vcs/O-2018.09-SP2
+VCS_DEPTH=0
+VCS_ARG_ADDED_FOR_TMP=1
+VCS_ARCH_OVERRIDE=linux
+VCS_ARCH=linux64
+USERNAME=ICer
+UNAME=/bin/uname
+TOOL_HOME=/home/synopsys/vcs/O-2018.09-SP2/linux64
+SSH_AUTH_SOCK=/run/user/1000/keyring/ssh
+SSH_AGENT_PID=3251
+SPYGLASS_HOME=/home/synopsys/SpyGlass-L2016.06/SPYGLASS_HOME/
+SESSION_MANAGER=local/unix:@/tmp/.ICE-unix/3115,unix/unix:/tmp/.ICE-unix/3115
+SCRNAME=vcs
+SCRIPT_NAME=vcs
+SCRIPTS_HOME=/home/ICer/scripts/
+SCL_HOME=/home/synopsys/scl/2018.06
+RISCV=/home/Riscv_Tools
+QUESTASIM_HOME=/home/mentor/questasim
+QT_PLUGIN_PATH=/usr/lib64/kde4/plugins:/usr/lib/kde4/plugins
+QT_IM_MODULE=ibus
+QT_GRAPHICSSYSTEM_CHECKED=1
+QTLIB=/usr/lib/qt-3.3/lib
+QTINC=/usr/lib/qt-3.3/include
+QTDIR=/usr/lib/qt-3.3
+QEMU_HOME=/home/Riscv_Tools/riscv-gnu-toolchain/qemu-6.0.0
+PT_HOME=/home/synopsys/pts/O-2018.06-SP1
+PROJ_NAME=OPEN_MIPS
+OVA_UUM=0
+MIPS_GNU_HOME=/home/ICer/mips_gnu
+MGLS_LICENSE_FILE=/home/mentor/questasim/mentor.dat
+MFLAGS=
+MAKE_TERMOUT=/dev/pts/0
+MAKE_TERMERR=/dev/pts/0
+MAKELEVEL=1
+MAKEFLAGS=
+LESSOPEN=||/usr/bin/lesspipe.sh %s
+LC_TIME=zh_CN.UTF-8
+LC_PAPER=zh_CN.UTF-8
+LC_NUMERIC=zh_CN.UTF-8
+LC_MONETARY=zh_CN.UTF-8
+LC_MEASUREMENT=zh_CN.UTF-8
+LC_HOME=/home/synopsys/lc/O-2018.06-SP1
+LC_ALL=C
+KDEDIRS=/usr
+IMSETTINGS_MODULE=none
+IMSETTINGS_INTEGRATE_DESKTOP=yes
+HISTCONTROL=ignoredups
+GNOME_TERMINAL_SERVICE=:1.106
+GNOME_TERMINAL_SCREEN=/org/gnome/Terminal/screen/4e763ced_09dd_46bd_8365_cb817f6b3b41
+GNOME_SHELL_SESSION_MODE=classic
+GNOME_DESKTOP_SESSION_ID=this-is-deprecated
+GDM_LANG=zh_CN.UTF-8
+GDMSESSION=gnome-classic
+DVE_HOME=/home/synopsys/vcs/O-2018.09-SP2
+DESKTOP_SESSION=gnome-classic
+DC_HOME=/home/synopsys/syn/O-2018.06-SP1
+DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-z9BX6GRByv,guid=39ccf48481f34c9e707853ce641e7954
+CORP_NAME=
+COLORTERM=truecolor
+AUTHOR_EMAIL=tianshuo@firefox.com
+0
+21
+1680531805 /home/ICer/ic_prjs/open_mips/tb/openmips_min_scop_tb.sv
+1679056985 /home/ICer/ic_prjs/open_mips/module/openmips_min_scop.v
+1680531321 /home/ICer/ic_prjs/open_mips/module/openmips.v
+1680098664 /home/ICer/ic_prjs/open_mips/module/stall_ctrl.v
+1679724730 /home/ICer/ic_prjs/open_mips/module/hilo_reg.v
+1679930256 /home/ICer/ic_prjs/open_mips/module/regfile.v
+1680098943 /home/ICer/ic_prjs/open_mips/module/pc_reg.v
+1680100457 /home/ICer/ic_prjs/open_mips/module/mem_wb.v
+1679754842 /home/ICer/ic_prjs/open_mips/module/mem.v
+1679325114 /home/ICer/ic_prjs/open_mips/module/inst_rom.v
+1680099663 /home/ICer/ic_prjs/open_mips/module/if_id.v
+1680451251 /home/ICer/ic_prjs/open_mips/module/id.v
+1680100016 /home/ICer/ic_prjs/open_mips/module/id_ex.v
+1680452660 /home/ICer/ic_prjs/open_mips/module/ex.v
+1680278075 /home/ICer/ic_prjs/open_mips/module/ex_mem.v
+1680434716 /home/ICer/ic_prjs/open_mips/module/defines.v
+1680531249 /home/ICer/ic_prjs/open_mips/cbb/mips_div.v
+1679930774 /home/ICer/ic_prjs/open_mips/cbb/mips_clz.v
+1680433770 file.lst
+1550753332 /home/synopsys/verdi/Verdi_O-2018.09-SP2/share/PLI/VCS/LINUX64/verdi.tab
+1551421246 /home/synopsys/vcs/O-2018.09-SP2/linux64/lib/vcsdp_lite.tab
+4
+1551422344 /home/synopsys/vcs/O-2018.09-SP2/linux64/lib/libvirsim.so
+1551421792 /home/synopsys/vcs/O-2018.09-SP2/linux64/lib/liberrorinf.so
+1551421768 /home/synopsys/vcs/O-2018.09-SP2/linux64/lib/libsnpsmalloc.so
+1551421789 /home/synopsys/vcs/O-2018.09-SP2/linux64/lib/libvfs.so
+1680531817 simv.daidir
+-1 partitionlib
