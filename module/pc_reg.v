@@ -3,9 +3,14 @@ module pc_reg
     (
     input                                        clk,
     input                                        rst_n,
+    //from stall control
     input                                  [5:0] stall,
-    output reg                                   ce,
-    output reg                    [`InstAddrBus] pc
+    //from id stage
+    input                                        branch_flag_i,
+    input                          [`RegBus]     branch_target_address_i,
+
+    output reg                                   ce,     // inst_rom enable
+    output reg                    [`InstAddrBus] pc      // inst_rom address
     );
 
   always @(posedge clk)
@@ -21,7 +26,12 @@ module pc_reg
     if (ce == `ChipDisable)
       pc <= 32'h0;
     else if (stall[0] == `NoStop)
-      pc <= pc + 4'h4;
+    begin
+      if (branch_flag_i == `Branch)
+        pc <= branch_target_address_i;
+      else
+        pc <= pc + 4'h4;
+    end
   end
 
 endmodule

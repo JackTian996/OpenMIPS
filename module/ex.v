@@ -17,6 +17,9 @@ module ex
     input                              [`RegBus] reg2_i,
     input                          [`RegAddrBus] wd_i,
     input                                        wreg_i,
+   // branch wr link addr
+    input                              [`RegBus] link_address_i,
+    input                                        is_in_delayslot_i,
    // hilo reg input
     input                                        mem_whilo_i,
     input                              [`RegBus] mem_hi_i,
@@ -453,6 +456,8 @@ begin : WDATA_MUX_PROC
       wdata_o                = arithmeticres;
     `EXE_RES_MUL:
       wdata_o                = mulres[`RegBus];
+    `EXE_RES_JUMP_BRANCH:
+      wdata_o                = link_address_i;
     default:
       wdata_o                = `ZeroWord;
   endcase

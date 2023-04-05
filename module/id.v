@@ -40,6 +40,14 @@ module id
     output reg                      [`AluSelBus] alusel_o,
     output reg                         [`RegBus] reg1_o,
     output reg                         [`RegBus] reg2_o,
+      // Branch
+    output reg                                   branch_flag_o,
+    output reg                         [`RegBus] branch_target_address_o,
+    output reg                         [`RegBus] link_address_o,
+    output reg                                   is_in_delayslot_o,
+    output reg                                   nxt_is_in_delayslot_o,
+    input                                        is_in_delayslot_i,
+
     //stall req
     output reg                                   stallreq
     );
@@ -51,6 +59,11 @@ module id
 // Internal Signals Declarations
 // -----------------------------------------------------------------------------
 wire                                       [5:0] op;
+wire                               [`RegBus] branch_addr;
+wire                               [`RegBus] pc_plus_4;
+wire                           [`RegBus]                  pc_plus_8;
+wire                               [`RegBus] imm_sll2_signedext;
+wire                               [`RegBus] jump_addr;
 reg                                    [`RegBus] imm;
 wire                                       [4:0] rs;
 wire                                       [4:0] rt;
@@ -75,6 +88,12 @@ assign rd                    = inst_i[15:11];
 assign shamt                 = inst_i[10:6];
 assign funct                 = inst_i[5:0];
 
+assign pc_plus_4             = pc_i + 4;
+assign pc_plus_8             = pc_i + 8;
+assign imm_sll2_signedext    = {{14{inst_i[15]}},inst_i[15:0],2'b00};
+assign jump_addr             = {pc_plus_4[31:28],inst_i[25:0],2'b00};
+assign branch_addr           = pc_plus_4 + imm_sll2_signedext;
+
 always @(*)
 begin
   if (rom_ce_dff_i == `ChipDisable)
@@ -89,6 +108,10 @@ begin
     reg1_addr_o              = `NOPRegAddr;
     reg2_addr_o              = `NOPRegAddr;
     imm                      = `ZeroWord;
+    link_address_o           = `ZeroWord;
+    nxt_is_in_delayslot_o    = `NotInDelaySlot;
+    branch_flag_o            = `NotBranch;
+    branch_target_address_o  = `ZeroWord;
   end
   else
   begin
@@ -102,6 +125,10 @@ begin
     reg1_addr_o              = rs;
     reg2_addr_o              = rt;
     imm                      = `ZeroWord;
+    link_address_o           = `ZeroWord;
+    nxt_is_in_delayslot_o    = `NotInDelaySlot;
+    branch_flag_o            = `NotBranch;
+    branch_target_address_o  = `ZeroWord;
     case(op)
       `EXE_SPECIAL_INST:
       begin
@@ -312,34 +339,61 @@ begin
               `EXE_MULT:
               begin
                aluop_o      = `EXE_MULT_OP; // signed multip
-               wreg_o       = `WriteDisable;
-               instvalid    = `InstValid;
-               reg1_read_o  = `ReadEnable;
-               reg2_read_o  = `ReadEnable;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadEnable;
               end
               `EXE_MULTU:
               begin
                aluop_o      = `EXE_MULTU_OP; // unsigned multip
-               wreg_o       = `WriteDisable;
-               instvalid    = `InstValid;
-               reg1_read_o  = `ReadEnable;
-               reg2_read_o  = `ReadEnable;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadEnable;
               end
               `EXE_DIV:
               begin
-               aluop_o      = `EXE_DIV_OP;
-               wreg_o       = `WriteDisable;
-               instvalid    = `InstValid;
-               reg1_read_o  = `ReadEnable;
-               reg2_read_o  = `ReadEnable;
+               aluop_o       = `EXE_DIV_OP;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadEnable;
               end
               `EXE_DIVU:
               begin
-               aluop_o      = `EXE_DIVU_OP;
-               wreg_o       = `WriteDisable;
-               instvalid    = `InstValid;
-               reg1_read_o  = `ReadEnable;
-               reg2_read_o  = `ReadEnable;
+               aluop_o       = `EXE_DIVU_OP;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadEnable;
+              end
+              `EXE_JR:
+              begin
+               aluop_o       = `EXE_JR_OP;
+               alusel_o      = `EXE_RES_JUMP_BRANCH;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadDisable;
+               link_address_o           = `ZeroWord;
+               nxt_is_in_delayslot_o    = `InDelaySlot;
+               branch_flag_o            = `Branch;
+               branch_target_address_o  = reg1_o;
+              end
+              `EXE_JALR:
+              begin
+               aluop_o       = `EXE_JALR_OP;
+               alusel_o      = `EXE_RES_JUMP_BRANCH;
+               wreg_o        = `WriteEnable;
+               wd_o          = rd;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadDisable;
+               link_address_o           = pc_plus_8;
+               nxt_is_in_delayslot_o    = `InDelaySlot;
+               branch_flag_o            = `Branch;
+               branch_target_address_o  = reg1_o;
               end
               default:
               begin
@@ -449,6 +503,160 @@ begin
         reg2_read_o          = `ReadDisable;
         imm                  = {{16{inst_i[15]}}, inst_i[15:0]};
       end
+      `EXE_J:
+      begin
+        aluop_o       = `EXE_J_OP;
+        alusel_o      = `EXE_RES_JUMP_BRANCH;
+        wreg_o        = `WriteDisable;
+        wd_o          = rd;
+        instvalid     = `InstValid;
+        reg1_read_o   = `ReadDisable;
+        reg2_read_o   = `ReadDisable;
+        link_address_o           = `ZeroWord;
+        nxt_is_in_delayslot_o    = `InDelaySlot;
+        branch_flag_o            = `Branch;
+        branch_target_address_o  = jump_addr;
+      end
+      `EXE_JAL:
+      begin
+        aluop_o       = `EXE_JAL_OP;
+        alusel_o      = `EXE_RES_JUMP_BRANCH;
+        wreg_o        = `WriteEnable;
+        wd_o          = 5'b11111;
+        instvalid     = `InstValid;
+        reg1_read_o   = `ReadDisable;
+        reg2_read_o   = `ReadDisable;
+        link_address_o           = pc_plus_8;
+        nxt_is_in_delayslot_o    = `InDelaySlot;
+        branch_flag_o            = `Branch;
+        branch_target_address_o  = jump_addr;
+      end
+      `EXE_BEQ:
+      begin
+        aluop_o       = `EXE_BEQ_OP;
+        alusel_o      = `EXE_RES_JUMP_BRANCH;
+        instvalid     = `InstValid;
+        reg1_read_o   = `ReadEnable;
+        reg2_read_o   = `ReadEnable;
+        if (reg1_o == reg2_o)
+        begin
+          nxt_is_in_delayslot_o    = `InDelaySlot;
+          branch_flag_o            = `Branch;
+          branch_target_address_o  = branch_addr;
+        end
+      end
+      `EXE_BGTZ:
+      begin
+        aluop_o       = `EXE_BGTZ_OP;
+        alusel_o      = `EXE_RES_JUMP_BRANCH;
+        instvalid     = `InstValid;
+        reg1_read_o   = `ReadEnable;
+        reg2_read_o   = `ReadDisable;
+        if ((reg1_o[31] == 1'b0) && (reg1_o != `ZeroWord))
+        begin
+          nxt_is_in_delayslot_o    = `InDelaySlot;
+          branch_flag_o            = `Branch;
+          branch_target_address_o  = branch_addr;
+        end
+      end
+      `EXE_BLEZ:
+      begin
+        aluop_o       = `EXE_BLEZ_OP;
+        alusel_o      = `EXE_RES_JUMP_BRANCH;
+        instvalid     = `InstValid;
+        reg1_read_o   = `ReadEnable;
+        reg2_read_o   = `ReadDisable;
+        if ((reg1_o[31] == 1'b1) || (reg1_o == `ZeroWord))
+        begin
+          nxt_is_in_delayslot_o    = `InDelaySlot;
+          branch_flag_o            = `Branch;
+          branch_target_address_o  = branch_addr;
+        end
+      end
+      `EXE_BNE:
+      begin
+        aluop_o       = `EXE_BNE_OP;
+        alusel_o      = `EXE_RES_JUMP_BRANCH;
+        instvalid     = `InstValid;
+        reg1_read_o   = `ReadEnable;
+        reg2_read_o   = `ReadEnable;
+        if (reg1_o != reg2_o)
+        begin
+          nxt_is_in_delayslot_o    = `InDelaySlot;
+          branch_flag_o            = `Branch;
+          branch_target_address_o  = branch_addr;
+        end
+      end
+      `EXE_REGIMM_INST:
+      begin
+        case(op4)
+          `EXE_BLTZ:
+          begin
+            aluop_o       = `EXE_BLTZ_OP;
+            alusel_o      = `EXE_RES_JUMP_BRANCH;
+            instvalid     = `InstValid;
+            reg1_read_o   = `ReadEnable;
+            reg2_read_o   = `ReadDisable;
+            if (reg1_o[31] == 1'b1)
+            begin
+              nxt_is_in_delayslot_o    = `InDelaySlot;
+              branch_flag_o            = `Branch;
+              branch_target_address_o  = branch_addr;
+            end
+          end
+          `EXE_BGEZ:
+          begin
+            aluop_o       = `EXE_BGEZ_OP;
+            alusel_o      = `EXE_RES_JUMP_BRANCH;
+            instvalid     = `InstValid;
+            reg1_read_o   = `ReadEnable;
+            reg2_read_o   = `ReadDisable;
+            if (reg1_o[31] == 1'b0)
+            begin
+              nxt_is_in_delayslot_o    = `InDelaySlot;
+              branch_flag_o            = `Branch;
+              branch_target_address_o  = branch_addr;
+            end
+          end
+          `EXE_BLTZAL:
+          begin
+            aluop_o       = `EXE_BLTZAL_OP;
+            alusel_o      = `EXE_RES_JUMP_BRANCH;
+            instvalid     = `InstValid;
+            reg1_read_o   = `ReadEnable;
+            reg2_read_o   = `ReadDisable;
+            wreg_o        = `WriteEnable;
+            wd_o          = 5'b11111;
+            link_address_o = pc_plus_8;
+            if (reg1_o[31] == 1'b1)
+            begin
+              nxt_is_in_delayslot_o    = `InDelaySlot;
+              branch_flag_o            = `Branch;
+              branch_target_address_o  = branch_addr;
+            end
+          end
+          `EXE_BGEZAL:
+          begin
+            aluop_o       = `EXE_BGEZAL_OP;
+            alusel_o      = `EXE_RES_JUMP_BRANCH;
+            instvalid     = `InstValid;
+            reg1_read_o   = `ReadEnable;
+            reg2_read_o   = `ReadDisable;
+            wreg_o        = `WriteEnable;
+            wd_o          = 5'b11111;
+            link_address_o = pc_plus_8;
+            if (reg1_o[31] == 1'b0)
+            begin
+              nxt_is_in_delayslot_o    = `InDelaySlot;
+              branch_flag_o            = `Branch;
+              branch_target_address_o  = branch_addr;
+            end
+          end
+          default:
+          begin
+          end
+        endcase
+      end
       `EXE_SPECIAL2_INST:
       begin
         case(op3)
@@ -527,7 +735,6 @@ begin
       begin
       end
     endcase
-
     if (inst_i[31:21] == 11'b0)
     begin
       if (op3 == `EXE_SLL)
@@ -604,6 +811,16 @@ always @(*)
 begin : STALLREQ_PROC
   stallreq                   = `NoStop;
 end
+
+// --------------------> is_in_delayslot_o
+always @(*)
+begin : IS_IN_DELAYSLOT_O_PROC
+  if (rst_n == `RstEnable)
+    is_in_delayslot_o        = `NotInDelaySlot;
+  else
+    is_in_delayslot_o        = is_in_delayslot_i;
+end
+
 // -----------------------------------------------------------------------------
 // Assertion Declarations
 // -----------------------------------------------------------------------------

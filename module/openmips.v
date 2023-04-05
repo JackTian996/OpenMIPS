@@ -29,6 +29,8 @@ module openmips
 // -----------------------------------------------------------------------------
 /*AUTOWIRE*/
 // Beginning of automatic wires (for undeclared instantiated-module outputs)
+wire                                             branch_flag_o;                // From u_id of id.v
+wire                                   [`RegBus] branch_target_address_o;      // From u_id of id.v
 wire                                   [`RegBus] div_opdata1_o;                // From u_ex of ex.v
 wire                                   [`RegBus] div_opdata2_o;                // From u_ex of ex.v
 wire                                      [63:0] div_result_i;                 // From u_mips_div of mips_div.v
@@ -41,6 +43,8 @@ wire                                       [1:0] ex_cnt_o;                     /
 wire                                   [`RegBus] ex_hi;                        // From u_ex of ex.v
 wire                             [`DoubleRegBus] ex_hilo_tmp_i;                // From u_ex_mem of ex_mem.v
 wire                             [`DoubleRegBus] ex_hilo_tmp_o;                // From u_ex of ex.v
+wire                                             ex_is_in_delayslot;           // From u_id_ex of id_ex.v
+wire                                   [`RegBus] ex_link_address;              // From u_id_ex of id_ex.v
 wire                                   [`RegBus] ex_lo;                        // From u_ex of ex.v
 wire                                   [`RegBus] ex_reg1;                      // From u_id_ex of id_ex.v
 wire                                   [`RegBus] ex_reg2;                      // From u_id_ex of id_ex.v
@@ -54,6 +58,8 @@ wire                                   [`RegBus] hi_i;                         /
 wire                                 [`AluOpBus] id_aluop;                     // From u_id of id.v
 wire                                [`AluSelBus] id_alusel;                    // From u_id of id.v
 wire                                  [`InstBus] id_inst;                      // From u_if_id of if_id.v
+wire                                             id_is_in_delayslot;           // From u_id of id.v
+wire                                   [`RegBus] id_link_address;              // From u_id of id.v
 wire                              [`InstAddrBus] id_pc;                        // From u_if_id of if_id.v
 wire                                   [`RegBus] id_reg1;                      // From u_id of id.v
 wire                                   [`RegBus] id_reg2;                      // From u_id of id.v
@@ -61,6 +67,7 @@ wire                                             id_rom_ce;                    /
 wire                               [`RegAddrBus] id_wd;                        // From u_id of id.v
 wire                                             id_wreg;                      // From u_id of id.v
 wire                              [`InstAddrBus] if_pc;                        // From u_pc_reg of pc_reg.v
+wire                                             is_in_delayslot_o;            // From u_id_ex of id_ex.v
 wire                                   [`RegBus] lo_i;                         // From u_hilo_reg of hilo_reg.v
 wire                                   [`RegBus] mem_hi;                       // From u_ex_mem of ex_mem.v
 wire                                   [`RegBus] mem_hi_o;                     // From u_mem of mem.v
@@ -74,6 +81,7 @@ wire                                             mem_whilo;                    /
 wire                                             mem_whilo_o;                  // From u_mem of mem.v
 wire                                             mem_wreg;                     // From u_ex_mem of ex_mem.v
 wire                                             mem_wreg_o;                   // From u_mem of mem.v
+wire                                             nxt_is_in_delayslot_i;        // From u_id of id.v
 wire                               [`RegAddrBus] reg1_addr_o;                  // From u_id of id.v
 wire                                   [`RegBus] reg1_data_i;                  // From u_regfile of regfile.v
 wire                                             reg1_read_o;                  // From u_id of id.v
@@ -100,6 +108,8 @@ wire                                             wb_wreg;                      /
 /* pc_reg AUTO_TEMPLATE (
     .ce                                (rom_ce_o[]                             ),
     .pc                                (if_pc[]                                ),
+    .branch_flag_i                     (branch_flag_o[]                        ),
+    .branch_target_address_i           (branch_target_address_o[]              ),
      );*/
 
 pc_reg u_pc_reg
@@ -111,7 +121,9 @@ pc_reg u_pc_reg
  // Inputs
     .clk                               (clk                                    ),
     .rst_n                             (rst_n                                  ),
-    .stall                             (stall[5:0]                             ));
+    .stall                             (stall[5:0]                             ),
+    .branch_flag_i                     (branch_flag_o                          ), // Templated
+    .branch_target_address_i           (branch_target_address_o[`RegBus]       )); // Templated
 
 assign rom_addr_o            = if_pc;
 
@@ -152,6 +164,10 @@ if_id u_if_id
     .mem_wdata_i                       (mem_wdata_o[]                          ),
     .rom_ce_dff_i                      (id_rom_ce                              ),
     .stallreq                          (stallreq_from_id                       ),
+    .link_address_o                    (id_link_address[]                      ),
+    .is_in_delayslot_o                 (id_is_in_delayslot[]                   ),
+    .nxt_is_in_delayslot_o             (nxt_is_in_delayslot_i[]                ),
+    .is_in_delayslot_i                 (is_in_delayslot_o[]                    ),
     );*/
 
 id u_id
@@ -168,6 +184,11 @@ id u_id
     .alusel_o                          (id_alusel[`AluSelBus]                  ), // Templated
     .reg1_o                            (id_reg1[`RegBus]                       ), // Templated
     .reg2_o                            (id_reg2[`RegBus]                       ), // Templated
+    .branch_flag_o                     (branch_flag_o                          ),
+    .branch_target_address_o           (branch_target_address_o[`RegBus]       ),
+    .link_address_o                    (id_link_address[`RegBus]               ), // Templated
+    .is_in_delayslot_o                 (id_is_in_delayslot                     ), // Templated
+    .nxt_is_in_delayslot_o             (nxt_is_in_delayslot_i                  ), // Templated
     .stallreq                          (stallreq_from_id                       ), // Templated
   // Inputs
     .rst_n                             (rst_n                                  ),
@@ -181,7 +202,8 @@ id u_id
     .ex_wreg_i                         (ex_wreg_o                              ), // Templated
     .mem_wd_i                          (mem_wd_o[`RegAddrBus]                  ), // Templated
     .mem_wdata_i                       (mem_wdata_o[`RegBus]                   ), // Templated
-    .mem_wreg_i                        (mem_wreg_o                             )); // Templated
+    .mem_wreg_i                        (mem_wreg_o                             ), // Templated
+    .is_in_delayslot_i                 (is_in_delayslot_o                      )); // Templated
 
  /* regfile AUTO_TEMPLATE (
     .we                                (wb_wreg[]                              ),
@@ -226,6 +248,9 @@ id_ex u_id_ex
     .ex_alusel                         (ex_alusel[`AluSelBus]                  ),
     .ex_reg1                           (ex_reg1[`RegBus]                       ),
     .ex_reg2                           (ex_reg2[`RegBus]                       ),
+    .ex_is_in_delayslot                (ex_is_in_delayslot                     ),
+    .ex_link_address                   (ex_link_address[`RegBus]               ),
+    .is_in_delayslot_o                 (is_in_delayslot_o                      ),
  // Inputs
     .clk                               (clk                                    ),
     .rst_n                             (rst_n                                  ),
@@ -235,7 +260,10 @@ id_ex u_id_ex
     .id_alusel                         (id_alusel[`AluSelBus]                  ),
     .id_reg1                           (id_reg1[`RegBus]                       ),
     .id_reg2                           (id_reg2[`RegBus]                       ),
-    .stall                             (stall[5:0]                             ));
+    .stall                             (stall[5:0]                             ),
+    .id_is_in_delayslot                (id_is_in_delayslot                     ),
+    .id_link_address                   (id_link_address[`RegBus]               ),
+    .nxt_is_in_delayslot_i             (nxt_is_in_delayslot_i                  ));
 
   /* ex AUTO_TEMPLATE (
     .aluop_i                           (ex_aluop[]                             ),
@@ -261,6 +289,8 @@ id_ex u_id_ex
     .cnt_o                             (ex_cnt_o[]                             ),
     .hilo_tmp_i                        (ex_hilo_tmp_i[]                        ),
     .cnt_i                             (ex_cnt_i[]                             ),
+    .link_address_i                    (ex_link_address[]                      ),
+    .is_in_delayslot_i                 (ex_is_in_delayslot[]                   ),
     )*/
 
 ex u_ex
@@ -288,6 +318,8 @@ ex u_ex
     .reg2_i                            (ex_reg2[`RegBus]                       ), // Templated
     .wd_i                              (ex_wd[`RegAddrBus]                     ), // Templated
     .wreg_i                            (ex_wreg                                ), // Templated
+    .link_address_i                    (ex_link_address[`RegBus]               ), // Templated
+    .is_in_delayslot_i                 (ex_is_in_delayslot                     ), // Templated
     .mem_whilo_i                       (mem_whilo_o                            ), // Templated
     .mem_hi_i                          (mem_hi_o[`RegBus]                      ), // Templated
     .mem_lo_i                          (mem_lo_o[`RegBus]                      ), // Templated
