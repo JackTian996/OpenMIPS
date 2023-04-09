@@ -22,6 +22,7 @@ module id_ex
     input                                        id_is_in_delayslot,
     input                              [`RegBus] id_link_address,
     input                                        nxt_is_in_delayslot_i,
+    input                              [`RegBus] id_inst,
 
     output reg                     [`RegAddrBus] ex_wd,
     output reg                                   ex_wreg,
@@ -31,7 +32,8 @@ module id_ex
     output reg                         [`RegBus] ex_reg2,
     output reg                                   ex_is_in_delayslot,
     output reg                         [`RegBus] ex_link_address,
-    output reg                                   is_in_delayslot_o
+    output reg                                   is_in_delayslot_o,
+    output reg                         [`RegBus] ex_inst
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -58,6 +60,7 @@ begin
     ex_is_in_delayslot       <= `NotInDelaySlot;
     ex_link_address          <= `ZeroWord;
     is_in_delayslot_o        <= `NotInDelaySlot;
+    ex_inst                  <= `ZeroWord;
   end
   else if ((stall[2] == `Stop) && (stall[3] == `NoStop))
   begin
@@ -69,6 +72,8 @@ begin
     ex_reg2                  <= `ZeroWord;
     ex_is_in_delayslot       <= `NotInDelaySlot;
     ex_link_address          <= `ZeroWord;
+    //is_in_delayslot_o        <= `NotInDelaySlot;  //keep when stall
+    ex_inst                  <= `ZeroWord;
   end
   else if (stall[2] == `NoStop)
   begin
@@ -81,6 +86,7 @@ begin
     ex_is_in_delayslot       <= id_is_in_delayslot;
     ex_link_address          <= id_link_address;
     is_in_delayslot_o        <= nxt_is_in_delayslot_i;
+    ex_inst                  <= id_inst;
   end
 end
 

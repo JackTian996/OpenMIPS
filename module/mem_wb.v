@@ -19,13 +19,17 @@ module mem_wb
     input                              [`RegBus] mem_hi,
     input                              [`RegBus] mem_lo,
     input                                  [5:0] stall,
+    input                                        mem_llbit_we,
+    input                                        mem_llbit_value,
 
     output reg                         [`RegBus] wb_wdata,
     output reg                     [`RegAddrBus] wb_wd,
     output reg                                   wb_wreg,
     output reg                                   wb_whilo,
     output reg                         [`RegBus] wb_hi,
-    output reg                         [`RegBus] wb_lo
+    output reg                         [`RegBus] wb_lo,
+    output reg                                   wb_llbit_we,
+    output reg                                   wb_llbit_value
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -49,6 +53,8 @@ begin
     wb_whilo                 <= `WriteDisable;
     wb_hi                    <= `ZeroWord;
     wb_lo                    <= `ZeroWord;
+    wb_llbit_we              <= `WriteDisable;
+    wb_llbit_value           <= 1'b0;
   end
   else if ((stall[4] == `Stop) && (stall[5] == `NoStop))
   begin
@@ -58,6 +64,8 @@ begin
     wb_whilo                 <= `WriteDisable;
     wb_hi                    <= `ZeroWord;
     wb_lo                    <= `ZeroWord;
+    wb_llbit_we              <= `WriteDisable;
+    wb_llbit_value           <= 1'b0;
   end
   else if (stall[4] == `NoStop)
   begin
@@ -67,6 +75,8 @@ begin
     wb_whilo                 <= mem_whilo;
     wb_hi                    <= mem_hi;
     wb_lo                    <= mem_lo;
+    wb_llbit_we              <= mem_llbit_we;
+    wb_llbit_value           <= mem_llbit_value;
   end
 end
 

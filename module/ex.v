@@ -17,6 +17,7 @@ module ex
     input                              [`RegBus] reg2_i,
     input                          [`RegAddrBus] wd_i,
     input                                        wreg_i,
+    input                              [`RegBus] inst_i, //need know imm field
    // branch wr link addr
     input                              [`RegBus] link_address_i,
     input                                        is_in_delayslot_i,
@@ -50,7 +51,11 @@ module ex
     output reg                                   signed_div_o,
     output reg                         [`RegBus] div_opdata1_o,
     output reg                         [`RegBus] div_opdata2_o,
-    output reg                                   div_start_o
+    output reg                                   div_start_o,
+   //load_store
+    output                             [`RegBus] mem_addr_o,
+    output                             [`RegBus] reg2_o,
+    output                           [`AluOpBus] aluop_o
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -444,7 +449,6 @@ begin : WDATA_MUX_PROC
     wreg_o                   = `WriteDisable;
   else
     wreg_o                   = wreg_i;
-
   case (alusel_i)
     `EXE_RES_LOGIC:
       wdata_o                = logicout;
@@ -469,6 +473,10 @@ begin : STALLREQ_PROC
   stallreq                   = (stallreq_for_madd_msub | stallreq_for_div);
 end
 
+// --------------------> load store
+ assign aluop_o              = aluop_i;
+ assign mem_addr_o           = reg1_i + {{16{inst_i[15]}},inst_i[15:0]};
+ assign reg2_o               = reg2_i;
 // -----------------------------------------------------------------------------
 // Assertion Declarations
 // -----------------------------------------------------------------------------

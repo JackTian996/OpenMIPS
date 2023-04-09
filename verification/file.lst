@@ -10,6 +10,8 @@
 /home/ICer/ic_prjs/open_mips/module/id.v
 /home/ICer/ic_prjs/open_mips/module/if_id.v
 /home/ICer/ic_prjs/open_mips/module/inst_rom.v
+/home/ICer/ic_prjs/open_mips/module/data_ram.v
+/home/ICer/ic_prjs/open_mips/module/llbit_reg.v
 /home/ICer/ic_prjs/open_mips/module/mem.v
 /home/ICer/ic_prjs/open_mips/module/mem_wb.v
 /home/ICer/ic_prjs/open_mips/module/pc_reg.v

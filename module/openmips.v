@@ -14,11 +14,20 @@ module openmips
       /*AUTOINPUT*/
       // Beginning of automatic inputs (from unused autoinst inputs)
     input                                        clk,                          // To u_pc_reg of pc_reg.v, ...
+    input                              [`RegBus] mem_data_i,                   // To u_mem of mem.v
     input                             [`InstBus] rom_data_i,                   // To u_if_id of if_id.v
     input                                        rst_n,                        // To u_pc_reg of pc_reg.v, ...
       // End of automatics
-    output                        [`InstAddrBus] rom_addr_o
+    output                        [`InstAddrBus] rom_addr_o,
       /*AUTOOUTPUT*/
+      // Beginning of automatic outputs (from unused autoinst outputs)
+    output                         [`RegAddrBus] ex_wd_o,                      // From u_ex of ex.v
+    output                             [`RegBus] mem_addr_o,                   // From u_mem of mem.v
+    output                                       mem_ce_o,                     // From u_mem of mem.v
+    output                             [`RegBus] mem_data_o,                   // From u_mem of mem.v
+    output                                 [3:0] mem_sel_o,                    // From u_mem of mem.v
+    output                                       mem_we_o                      // From u_mem of mem.v
+      // End of automatics
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -37,19 +46,22 @@ wire                                      [63:0] div_result_i;                 /
 wire                                             div_start_o;                  // From u_ex of ex.v
 wire                                             div_valid_i;                  // From u_mips_div of mips_div.v
 wire                                 [`AluOpBus] ex_aluop;                     // From u_id_ex of id_ex.v
+wire                                 [`AluOpBus] ex_aluop_o;                   // From u_ex of ex.v
 wire                                [`AluSelBus] ex_alusel;                    // From u_id_ex of id_ex.v
 wire                                       [1:0] ex_cnt_i;                     // From u_ex_mem of ex_mem.v
 wire                                       [1:0] ex_cnt_o;                     // From u_ex of ex.v
 wire                                   [`RegBus] ex_hi;                        // From u_ex of ex.v
 wire                             [`DoubleRegBus] ex_hilo_tmp_i;                // From u_ex_mem of ex_mem.v
 wire                             [`DoubleRegBus] ex_hilo_tmp_o;                // From u_ex of ex.v
+wire                                   [`RegBus] ex_inst;                      // From u_id_ex of id_ex.v
 wire                                             ex_is_in_delayslot;           // From u_id_ex of id_ex.v
 wire                                   [`RegBus] ex_link_address;              // From u_id_ex of id_ex.v
 wire                                   [`RegBus] ex_lo;                        // From u_ex of ex.v
+wire                                   [`RegBus] ex_mem_addr_o;                // From u_ex of ex.v
 wire                                   [`RegBus] ex_reg1;                      // From u_id_ex of id_ex.v
 wire                                   [`RegBus] ex_reg2;                      // From u_id_ex of id_ex.v
+wire                                   [`RegBus] ex_reg2_o;                    // From u_ex of ex.v
 wire                               [`RegAddrBus] ex_wd;                        // From u_id_ex of id_ex.v
-wire                               [`RegAddrBus] ex_wd_o;                      // From u_ex of ex.v
 wire                                   [`RegBus] ex_wdata_o;                   // From u_ex of ex.v
 wire                                             ex_whilo;                     // From u_ex of ex.v
 wire                                             ex_wreg;                      // From u_id_ex of id_ex.v
@@ -58,6 +70,7 @@ wire                                   [`RegBus] hi_i;                         /
 wire                                 [`AluOpBus] id_aluop;                     // From u_id of id.v
 wire                                [`AluSelBus] id_alusel;                    // From u_id of id.v
 wire                                  [`InstBus] id_inst;                      // From u_if_id of if_id.v
+wire                                  [`InstBus] id_inst_o;                    // From u_id of id.v
 wire                                             id_is_in_delayslot;           // From u_id of id.v
 wire                                   [`RegBus] id_link_address;              // From u_id of id.v
 wire                              [`InstAddrBus] id_pc;                        // From u_if_id of if_id.v
@@ -69,10 +82,16 @@ wire                                             id_wreg;                      /
 wire                              [`InstAddrBus] if_pc;                        // From u_pc_reg of pc_reg.v
 wire                                             is_in_delayslot_o;            // From u_id_ex of id_ex.v
 wire                                   [`RegBus] lo_i;                         // From u_hilo_reg of hilo_reg.v
+wire                                 [`AluOpBus] mem_aluop;                    // From u_ex_mem of ex_mem.v
 wire                                   [`RegBus] mem_hi;                       // From u_ex_mem of ex_mem.v
 wire                                   [`RegBus] mem_hi_o;                     // From u_mem of mem.v
+wire                                             mem_llbit_value;              // From u_mem of mem.v
+wire                                             mem_llbit_value_i;            // From u_llbit_reg of llbit_reg.v
+wire                                             mem_llbit_we;                 // From u_mem of mem.v
 wire                                   [`RegBus] mem_lo;                       // From u_ex_mem of ex_mem.v
 wire                                   [`RegBus] mem_lo_o;                     // From u_mem of mem.v
+wire                                   [`RegBus] mem_mem_addr;                 // From u_ex_mem of ex_mem.v
+wire                                   [`RegBus] mem_reg2;                     // From u_ex_mem of ex_mem.v
 wire                               [`RegAddrBus] mem_wd;                       // From u_ex_mem of ex_mem.v
 wire                               [`RegAddrBus] mem_wd_o;                     // From u_mem of mem.v
 wire                                   [`RegBus] mem_wdata;                    // From u_ex_mem of ex_mem.v
@@ -93,6 +112,8 @@ wire                                       [5:0] stall;                        /
 wire                                             stallreq_from_ex;             // From u_ex of ex.v
 wire                                             stallreq_from_id;             // From u_id of id.v
 wire                                   [`RegBus] wb_hi;                        // From u_mem_wb of mem_wb.v
+wire                                             wb_llbit_value;               // From u_mem_wb of mem_wb.v
+wire                                             wb_llbit_we;                  // From u_mem_wb of mem_wb.v
 wire                                   [`RegBus] wb_lo;                        // From u_mem_wb of mem_wb.v
 wire                               [`RegAddrBus] wb_wd;                        // From u_mem_wb of mem_wb.v
 wire                                   [`RegBus] wb_wdata;                     // From u_mem_wb of mem_wb.v
@@ -168,12 +189,16 @@ if_id u_if_id
     .is_in_delayslot_o                 (id_is_in_delayslot[]                   ),
     .nxt_is_in_delayslot_o             (nxt_is_in_delayslot_i[]                ),
     .is_in_delayslot_i                 (is_in_delayslot_o[]                    ),
+    .inst_o                            (id_inst_o[]                            ),
+    .ex_aluop_i                        (ex_aluop[]                             ),
+    .ex_wd_i                           (ex_wd[]                                ),
     );*/
 
 id u_id
  (
 /*AUTOINST*/
   // Outputs
+    .inst_o                            (id_inst_o[`InstBus]                    ), // Templated
     .reg1_read_o                       (reg1_read_o                            ),
     .reg2_read_o                       (reg2_read_o                            ),
     .reg1_addr_o                       (reg1_addr_o[`RegAddrBus]               ),
@@ -197,13 +222,14 @@ id u_id
     .rom_ce_dff_i                      (id_rom_ce                              ), // Templated
     .reg1_data_i                       (reg1_data_i[`RegBus]                   ),
     .reg2_data_i                       (reg2_data_i[`RegBus]                   ),
-    .ex_wd_i                           (ex_wd_o[`RegAddrBus]                   ), // Templated
+    .ex_wd_i                           (ex_wd[`RegAddrBus]                     ), // Templated
     .ex_wdata_i                        (ex_wdata_o[`RegBus]                    ), // Templated
     .ex_wreg_i                         (ex_wreg_o                              ), // Templated
     .mem_wd_i                          (mem_wd_o[`RegAddrBus]                  ), // Templated
     .mem_wdata_i                       (mem_wdata_o[`RegBus]                   ), // Templated
     .mem_wreg_i                        (mem_wreg_o                             ), // Templated
-    .is_in_delayslot_i                 (is_in_delayslot_o                      )); // Templated
+    .is_in_delayslot_i                 (is_in_delayslot_o                      ), // Templated
+    .ex_aluop_i                        (ex_aluop[`AluOpBus]                    )); // Templated
 
  /* regfile AUTO_TEMPLATE (
     .we                                (wb_wreg[]                              ),
@@ -235,7 +261,7 @@ regfile u_regfile
     .re2                               (reg2_read_o                            )); // Templated
 
   /* id_ex AUTO_TEMPLATE (
-
+    .id_inst                           (id_inst_o[]                            ),
     )*/
 
 id_ex u_id_ex
@@ -251,6 +277,7 @@ id_ex u_id_ex
     .ex_is_in_delayslot                (ex_is_in_delayslot                     ),
     .ex_link_address                   (ex_link_address[`RegBus]               ),
     .is_in_delayslot_o                 (is_in_delayslot_o                      ),
+    .ex_inst                           (ex_inst[`RegBus]                       ),
  // Inputs
     .clk                               (clk                                    ),
     .rst_n                             (rst_n                                  ),
@@ -263,7 +290,8 @@ id_ex u_id_ex
     .stall                             (stall[5:0]                             ),
     .id_is_in_delayslot                (id_is_in_delayslot                     ),
     .id_link_address                   (id_link_address[`RegBus]               ),
-    .nxt_is_in_delayslot_i             (nxt_is_in_delayslot_i                  ));
+    .nxt_is_in_delayslot_i             (nxt_is_in_delayslot_i                  ),
+    .id_inst                           (id_inst_o[`RegBus]                     )); // Templated
 
   /* ex AUTO_TEMPLATE (
     .aluop_i                           (ex_aluop[]                             ),
@@ -291,6 +319,10 @@ id_ex u_id_ex
     .cnt_i                             (ex_cnt_i[]                             ),
     .link_address_i                    (ex_link_address[]                      ),
     .is_in_delayslot_i                 (ex_is_in_delayslot[]                   ),
+    .inst_i                            (ex_inst[]                              ),
+    .aluop_o                           (ex_aluop_o[]                           ),
+    .mem_addr_o                        (ex_mem_addr_o[]                        ),
+    .reg2_o                            (ex_reg2_o[]                            ),
     )*/
 
 ex u_ex
@@ -310,6 +342,9 @@ ex u_ex
     .div_opdata1_o                     (div_opdata1_o[`RegBus]                 ),
     .div_opdata2_o                     (div_opdata2_o[`RegBus]                 ),
     .div_start_o                       (div_start_o                            ),
+    .mem_addr_o                        (ex_mem_addr_o[`RegBus]                 ), // Templated
+    .reg2_o                            (ex_reg2_o[`RegBus]                     ), // Templated
+    .aluop_o                           (ex_aluop_o[`AluOpBus]                  ), // Templated
   // Inputs
     .rst_n                             (rst_n                                  ),
     .aluop_i                           (ex_aluop[`AluOpBus]                    ), // Templated
@@ -318,6 +353,7 @@ ex u_ex
     .reg2_i                            (ex_reg2[`RegBus]                       ), // Templated
     .wd_i                              (ex_wd[`RegAddrBus]                     ), // Templated
     .wreg_i                            (ex_wreg                                ), // Templated
+    .inst_i                            (ex_inst[`RegBus]                       ), // Templated
     .link_address_i                    (ex_link_address[`RegBus]               ), // Templated
     .is_in_delayslot_i                 (ex_is_in_delayslot                     ), // Templated
     .mem_whilo_i                       (mem_whilo_o                            ), // Templated
@@ -341,6 +377,9 @@ ex u_ex
     .cnt_i                             (ex_cnt_o[]                             ),
     .hilo_o                            (ex_hilo_tmp_i[]                        ),
     .cnt_o                             (ex_cnt_i[]                             ),
+    .ex_aluop                          (ex_aluop_o[]                           ),
+    .ex_mem_addr                       (ex_mem_addr_o[]                        ),
+    .ex_reg2                           (ex_reg2_o[]                            ),
   );*/
 ex_mem u_ex_mem
  (
@@ -354,6 +393,9 @@ ex_mem u_ex_mem
     .mem_lo                            (mem_lo[`RegBus]                        ),
     .hilo_o                            (ex_hilo_tmp_i[`DoubleRegBus]           ), // Templated
     .cnt_o                             (ex_cnt_i[1:0]                          ), // Templated
+    .mem_mem_addr                      (mem_mem_addr[`RegBus]                  ),
+    .mem_aluop                         (mem_aluop[`AluOpBus]                   ),
+    .mem_reg2                          (mem_reg2[`RegBus]                      ),
   // Inputs
     .clk                               (clk                                    ),
     .rst_n                             (rst_n                                  ),
@@ -365,7 +407,10 @@ ex_mem u_ex_mem
     .ex_lo                             (ex_lo[`RegBus]                         ),
     .stall                             (stall[5:0]                             ),
     .hilo_i                            (ex_hilo_tmp_o[`DoubleRegBus]           ), // Templated
-    .cnt_i                             (ex_cnt_o[1:0]                          )); // Templated
+    .cnt_i                             (ex_cnt_o[1:0]                          ), // Templated
+    .ex_mem_addr                       (ex_mem_addr_o[`RegBus]                 ), // Templated
+    .ex_aluop                          (ex_aluop_o[`AluOpBus]                  ), // Templated
+    .ex_reg2                           (ex_reg2_o[`RegBus]                     )); // Templated
 
   /* mem AUTO_TEMPLATE (
     .wdata_i                           (mem_wdata[]                            ),
@@ -380,6 +425,14 @@ ex_mem u_ex_mem
     .whilo_o                           (mem_whilo_o                            ),
     .hi_o                              (mem_hi_o[]                             ),
     .lo_o                              (mem_lo_o[]                             ),
+    .aluop_i                           (mem_aluop[]                            ),
+    .mem_addr_i                        (mem_mem_addr[]                         ),
+    .reg2_i                            (mem_reg2[]                             ),
+    .llbit_value_i                     (mem_llbit_value_i                      ),
+    .wb_llbit_we_i                     (wb_llbit_we                            ),
+    .wb_llbit_value_i                  (wb_llbit_value                         ),
+    .llbit_we_o                        (mem_llbit_we                           ),
+    .llbit_value_o                     (mem_llbit_value                        ),
     )*/
 
  mem u_mem
@@ -392,6 +445,13 @@ ex_mem u_ex_mem
     .whilo_o                           (mem_whilo_o                            ), // Templated
     .hi_o                              (mem_hi_o[`RegBus]                      ), // Templated
     .lo_o                              (mem_lo_o[`RegBus]                      ), // Templated
+    .mem_ce_o                          (mem_ce_o                               ),
+    .mem_we_o                          (mem_we_o                               ),
+    .mem_addr_o                        (mem_addr_o[`RegBus]                    ),
+    .mem_data_o                        (mem_data_o[`RegBus]                    ),
+    .mem_sel_o                         (mem_sel_o[3:0]                         ),
+    .llbit_we_o                        (mem_llbit_we                           ), // Templated
+    .llbit_value_o                     (mem_llbit_value                        ), // Templated
   // Inputs
     .rst_n                             (rst_n                                  ),
     .wdata_i                           (mem_wdata[`RegBus]                     ), // Templated
@@ -399,7 +459,14 @@ ex_mem u_ex_mem
     .wreg_i                            (mem_wreg                               ), // Templated
     .whilo_i                           (mem_whilo                              ), // Templated
     .hi_i                              (mem_hi[`RegBus]                        ), // Templated
-    .lo_i                              (mem_lo[`RegBus]                        )); // Templated
+    .lo_i                              (mem_lo[`RegBus]                        ), // Templated
+    .aluop_i                           (mem_aluop[`AluOpBus]                   ), // Templated
+    .mem_addr_i                        (mem_mem_addr[`RegBus]                  ), // Templated
+    .reg2_i                            (mem_reg2[`RegBus]                      ), // Templated
+    .mem_data_i                        (mem_data_i[`RegBus]                    ),
+    .llbit_value_i                     (mem_llbit_value_i                      ), // Templated
+    .wb_llbit_we_i                     (wb_llbit_we                            ), // Templated
+    .wb_llbit_value_i                  (wb_llbit_value                         )); // Templated
 
 /* mem_wb AUTO_TEMPLATE (
     .mem_wdata                         (mem_wdata_o[]                          ),
@@ -420,6 +487,8 @@ ex_mem u_ex_mem
     .wb_whilo                          (wb_whilo                               ),
     .wb_hi                             (wb_hi[`RegBus]                         ),
     .wb_lo                             (wb_lo[`RegBus]                         ),
+    .wb_llbit_we                       (wb_llbit_we                            ),
+    .wb_llbit_value                    (wb_llbit_value                         ),
   // Inputs
     .clk                               (clk                                    ),
     .rst_n                             (rst_n                                  ),
@@ -429,7 +498,9 @@ ex_mem u_ex_mem
     .mem_whilo                         (mem_whilo_o                            ), // Templated
     .mem_hi                            (mem_hi_o[`RegBus]                      ), // Templated
     .mem_lo                            (mem_lo_o[`RegBus]                      ), // Templated
-    .stall                             (stall[5:0]                             ));
+    .stall                             (stall[5:0]                             ),
+    .mem_llbit_we                      (mem_llbit_we                           ),
+    .mem_llbit_value                   (mem_llbit_value                        ));
 
 /* hilo_reg AUTO_TEMPLATE (
     .we                                (wb_whilo                               ),
@@ -495,6 +566,23 @@ u_mips_div (
     .opdata2_i                         (div_opdata2_o[31:0]                    ), // Templated
     .start_i                           (div_start_o                            ), // Templated
     .annul_i                           (1'b0                                   )); // Templated
+
+/*llbit_reg AUTO_TEMPLATE (
+    .we                                (wb_llbit_we                            ),
+    .llbit_i                           (wb_llbit_value                         ),
+    .flush                             (1'b0                                   ),
+    .llbit_o                           (mem_llbit_value_i                      ),
+  );*/
+llbit_reg u_llbit_reg (
+/*AUTOINST*/
+                       // Outputs
+    .llbit_o                           (mem_llbit_value_i                      ), // Templated
+                       // Inputs
+    .clk                               (clk                                    ),
+    .rst_n                             (rst_n                                  ),
+    .flush                             (1'b0                                   ), // Templated
+    .we                                (wb_llbit_we                            ), // Templated
+    .llbit_i                           (wb_llbit_value                         )); // Templated
 // -----------------------------------------------------------------------------
 // Assertion Declarations
 // -----------------------------------------------------------------------------
