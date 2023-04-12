@@ -17,7 +17,7 @@ module ex
     input                              [`RegBus] reg2_i,
     input                          [`RegAddrBus] wd_i,
     input                                        wreg_i,
-    input                              [`RegBus] inst_i, //need know imm field
+    input                              [`RegBus] inst_i,                       // need know imm field
    // branch wr link addr
     input                              [`RegBus] link_address_i,
     input                                        is_in_delayslot_i,
@@ -55,7 +55,21 @@ module ex
    //load_store
     output                             [`RegBus] mem_addr_o,
     output                             [`RegBus] reg2_o,
-    output                           [`AluOpBus] aluop_o
+    output                           [`AluOpBus] aluop_o,
+    //interface with CP0 SRAM
+    output reg                                   cp0_we_o,
+    output reg                             [4:0] cp0_waddr_o,
+    output reg                             [4:0] cp0_raddr_o,
+    output reg                         [`RegBus] cp0_wdata_o,
+    input                              [`RegBus] cp0_rdata_i,
+      //wb stage cp0 wdata forward
+    input                                        wb_cp0_we_i,
+    input                                  [4:0] wb_cp0_waddr_i,
+    input                              [`RegBus] wb_cp0_wdata_i,
+      //mem stage cp0 wdata forward
+    input                                        mem_cp0_we_i,
+    input                                  [4:0] mem_cp0_waddr_i,
+    input                              [`RegBus] mem_cp0_wdata_i
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -65,6 +79,7 @@ module ex
 // Internal Signals Declarations
 // -----------------------------------------------------------------------------
 reg                                    [`RegBus] logicout;
+reg                                    [`RegBus] cp0_rdata_final;
 reg                              [`DoubleRegBus] hilo_tmp1;
 reg                                              stallreq_for_madd_msub;
 reg                                              stallreq_for_div;
@@ -156,6 +171,15 @@ begin : HILO_MUX_PROC
   end
 end
 
+always @(*)
+begin : CP0_RDATA_MUX_PROC
+  if ((mem_cp0_we_i == `WriteEnable) && (mem_cp0_waddr_i == inst_i[15:11]))
+    cp0_rdata_final          = mem_cp0_wdata_i;
+  else if ((wb_cp0_we_i == `WriteEnable) && (wb_cp0_waddr_i == inst_i[15:11]))
+    cp0_rdata_final          = wb_cp0_wdata_i;
+  else
+    cp0_rdata_final          = cp0_rdata_i;
+end
 // ***************************************
 // Write to HILO Register
 // ***************************************
@@ -226,6 +250,8 @@ begin : MOVERES_PROC
         moveres              = hi_final;
       `EXE_MFLO_OP:
         moveres              = lo_final;
+      `EXE_MFC0_OP:
+        moveres              = cp0_rdata_final;
       default:
         moveres              = `ZeroWord;
     endcase
@@ -474,9 +500,39 @@ begin : STALLREQ_PROC
 end
 
 // --------------------> load store
- assign aluop_o              = aluop_i;
- assign mem_addr_o           = reg1_i + {{16{inst_i[15]}},inst_i[15:0]};
- assign reg2_o               = reg2_i;
+assign aluop_o               = aluop_i;
+assign mem_addr_o            = reg1_i + {{16{inst_i[15]}},inst_i[15:0]};
+assign reg2_o                = reg2_i;
+
+// --------------------> cp0 sram control
+always @(*)
+begin
+  if (rst_n == `RstEnable)
+  begin
+    cp0_we_o      = `WriteDisable;
+    cp0_waddr_o   = 5'b0;
+    cp0_raddr_o   = 5'b0;
+    cp0_wdata_o   = `ZeroWord;
+  end
+  else
+  begin
+    cp0_we_o      = `WriteDisable;
+    cp0_waddr_o   = 5'b0;
+    cp0_raddr_o   = 5'b0;
+    cp0_wdata_o   = `ZeroWord;
+    if (aluop_i == `EXE_MFC0_OP)
+    begin
+      cp0_raddr_o   = inst_i[15:11];   //rd    wd = rt
+    end
+    else if (aluop_i == `EXE_MTC0_OP)
+    begin
+      cp0_we_o      = `WriteEnable;
+      cp0_waddr_o   = inst_i[15:11]; //rd
+      cp0_wdata_o   = reg2_i;        //rt
+    end
+  end
+end
+
 // -----------------------------------------------------------------------------
 // Assertion Declarations
 // -----------------------------------------------------------------------------

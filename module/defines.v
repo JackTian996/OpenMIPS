@@ -20,6 +20,9 @@
 `define NotBranch            1'b0
 `define InDelaySlot          1'b1
 `define NotInDelaySlot       1'b0
+`define InterruptAssert      1'b1
+`define InterruptDessert     1'b0
+
 // ***************************************
 // Instruction
 // ***************************************
@@ -189,6 +192,9 @@
 `define EXE_SWR_OP           8'b11101110
 `define EXE_SYNC_OP          8'b00001111
 
+`define EXE_MFC0_OP          8'b01011101
+`define EXE_MTC0_OP          8'b01100000
+
 `define EXE_NOP_OP           8'b00000000
 // AluSel operation type
 `define EXE_RES_LOGIC        3'b001
@@ -228,3 +234,14 @@
 `define RegNum               32
 `define RegNumLog2           5
 `define NOPRegAddr           5'b00000
+
+// ***************************************
+// CPO Register Address
+// ***************************************
+`define CP0_REG_COUNT        5'b01001        // RO
+`define CP0_REG_COMPARE      5'b01011        // RW
+`define CP0_REG_STATUS       5'b01100        // RW
+`define CP0_REG_CAUSE        5'b01101        // RO
+`define CP0_REG_EPC          5'b01110        // RW
+`define CP0_REG_PRID         5'b01111        // RO
+`define CP0_REG_CONFIG       5'b10000        // RO
