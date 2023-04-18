@@ -1,4 +1,16 @@
-[toc]
+<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+- [OPEN\_MIPS](#open_mips)
+  - [CP0 Access Insruction Implement](#cp0-access-insruction-implement)
+    - [Registers](#registers)
+  - [Exception Relative Instruction Implement](#exception-relative-instruction-implement)
+    - [Exception in MIPS32 Arch](#exception-in-mips32-arch)
+    - [Precise Exception](#precise-exception)
+    - [Exception handle procedure](#exception-handle-procedure)
+
+<!-- /code_chunk_output -->
 
 # OPEN_MIPS
 
@@ -6,9 +18,9 @@
 
 ### Registers
 
-![alt](media/cp0_status_reg.png)
-![alt](media/cp0_cause_reg.png)
-![alt](media/exccode.png)
+![alt](./media/cp0_status_reg.png)
+![alt](./media/cp0_cause_reg.png)
+![alt](./media/exccode.png)
 
 ## Exception Relative Instruction Implement
 
