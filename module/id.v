@@ -51,7 +51,10 @@ module id
     //slove read after load harzard
     input                            [`AluOpBus] ex_aluop_i,
     //stall req
-    output                                       stallreq
+    output                                       stallreq,
+    //exception
+    output                                [31:0] excep_type_o,
+    output                             [`RegBus] curr_inst_addr_o
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -79,6 +82,8 @@ wire                                       [4:0] op2;
 wire                                       [5:0] op3;
 wire                                       [4:0] op4;
 reg                                              instvalid;
+reg                                              excep_type_eret;
+reg                                              excep_type_syscall;
 // -----------------------------------------------------------------------------
 // Main Code
 // -----------------------------------------------------------------------------
@@ -101,6 +106,13 @@ assign branch_addr           = pc_plus_4 + imm_sll2_signedext;
 
 assign inst_o                = inst_i;
 
+// exception additional signal
+assign curr_inst_addr_o      = pc_i;
+  //bit8  -> syscall
+  //bit9  -> InstInvalid
+  //bit12 -> eret
+assign excep_type_o          = {19'b0,excep_type_eret,2'b0,instvalid,excep_type_syscall,8'b0};
+
 always @(*)
 begin
   if (rom_ce_dff_i == `ChipDisable)
@@ -119,6 +131,8 @@ begin
     nxt_is_in_delayslot_o    = `NotInDelaySlot;
     branch_flag_o            = `NotBranch;
     branch_target_address_o  = `ZeroWord;
+    excep_type_eret          = `False_v;
+    excep_type_syscall       = `False_v;
   end
   else
   begin
@@ -136,6 +150,8 @@ begin
     nxt_is_in_delayslot_o    = `NotInDelaySlot;
     branch_flag_o            = `NotBranch;
     branch_target_address_o  = `ZeroWord;
+    excep_type_eret          = `False_v;
+    excep_type_syscall       = `False_v;
     case(op)
       `EXE_SPECIAL_INST:
       begin
@@ -401,6 +417,70 @@ begin
                nxt_is_in_delayslot_o = `InDelaySlot;
                branch_flag_o = `Branch;
                branch_target_address_o = reg1_o;
+              end
+              `EXE_TEQ:
+              begin
+               aluop_o       = `EXE_TEQ_OP;
+               alusel_o      = `EXE_RES_NOP;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadEnable;
+              end
+              `EXE_TGE:
+              begin
+               aluop_o       = `EXE_TGE_OP;
+               alusel_o      = `EXE_RES_NOP;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadEnable;
+              end
+              `EXE_TGEU:   // unsigned compare
+              begin
+               aluop_o       = `EXE_TGE_OP;
+               alusel_o      = `EXE_RES_NOP;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadEnable;
+              end
+              `EXE_TLT:
+              begin
+               aluop_o       = `EXE_TLT_OP;
+               alusel_o      = `EXE_RES_NOP;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadEnable;
+              end
+              `EXE_TLTU:
+              begin
+               aluop_o       = `EXE_TLTU_OP;
+               alusel_o      = `EXE_RES_NOP;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadEnable;
+              end
+              `EXE_TNE:
+              begin
+               aluop_o       = `EXE_TNE_OP;
+               alusel_o      = `EXE_RES_NOP;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadEnable;
+               reg2_read_o   = `ReadEnable;
+              end
+              `EXE_SYSCALL:
+              begin
+               aluop_o       = `EXE_SYSCALL_OP;
+               alusel_o      = `EXE_RES_NOP;
+               wreg_o        = `WriteDisable;
+               instvalid     = `InstValid;
+               reg1_read_o   = `ReadDisable;
+               reg2_read_o   = `ReadDisable;
+               excep_type_syscall = `True_v;
               end
               default:
               begin
@@ -731,7 +811,7 @@ begin
       end
       `EXE_REGIMM_INST:
       begin
-        case(op4)
+        case(op4)  // inst_i[20:16]
           `EXE_BLTZ:
           begin
             aluop_o          = `EXE_BLTZ_OP;
@@ -793,6 +873,66 @@ begin
               branch_flag_o  = `Branch;
               branch_target_address_o = branch_addr;
             end
+          end
+          `EXE_TEQI:
+          begin
+            aluop_o          = `EXE_TEQI_OP;
+            alusel_o         = `EXE_RES_NOP;
+            instvalid        = `InstValid;
+            reg1_read_o      = `ReadEnable;
+            reg2_read_o      = `ReadDisable;
+            wreg_o           = `WriteDisable;
+            imm              = {{16{inst_i[15]}},inst_i[15:0]};
+          end
+          `EXE_TGEI:
+          begin
+            aluop_o          = `EXE_TGEI_OP;
+            alusel_o         = `EXE_RES_NOP;
+            instvalid        = `InstValid;
+            reg1_read_o      = `ReadEnable;
+            reg2_read_o      = `ReadDisable;
+            wreg_o           = `WriteDisable;
+            imm              = {{16{inst_i[15]}},inst_i[15:0]};
+          end
+          `EXE_TGEIU:
+          begin
+            aluop_o          = `EXE_TGEIU_OP;
+            alusel_o         = `EXE_RES_NOP;
+            instvalid        = `InstValid;
+            reg1_read_o      = `ReadEnable;
+            reg2_read_o      = `ReadDisable;
+            wreg_o           = `WriteDisable;
+            imm              = {{16{inst_i[15]}},inst_i[15:0]};
+          end
+          `EXE_TLTI:
+          begin
+            aluop_o          = `EXE_TLTI_OP;
+            alusel_o         = `EXE_RES_NOP;
+            instvalid        = `InstValid;
+            reg1_read_o      = `ReadEnable;
+            reg2_read_o      = `ReadDisable;
+            wreg_o           = `WriteDisable;
+            imm              = {{16{inst_i[15]}},inst_i[15:0]};
+          end
+          `EXE_TLTIU:
+          begin
+            aluop_o          = `EXE_TLTIU_OP;
+            alusel_o         = `EXE_RES_NOP;
+            instvalid        = `InstValid;
+            reg1_read_o      = `ReadEnable;
+            reg2_read_o      = `ReadDisable;
+            wreg_o           = `WriteDisable;
+            imm              = {{16{inst_i[15]}},inst_i[15:0]};
+          end
+          `EXE_TNEI:
+          begin
+            aluop_o          = `EXE_TNEI_OP;
+            alusel_o         = `EXE_RES_NOP;
+            instvalid        = `InstValid;
+            reg1_read_o      = `ReadEnable;
+            reg2_read_o      = `ReadDisable;
+            wreg_o           = `WriteDisable;
+            imm              = {{16{inst_i[15]}},inst_i[15:0]};
           end
           default:
           begin
@@ -913,6 +1053,7 @@ begin
         imm[4:0]             = inst_i[10:6];
       end
     end //if (inst_i[31:21] == 11'b0)
+
     if ((inst_i[31:21] == 11'b01000000100) && (inst_i[10:3] == 8'b00000000))
     begin
       aluop_o                = `EXE_MTC0_OP;
@@ -931,6 +1072,17 @@ begin
       instvalid              = `InstValid;
       reg1_read_o            = `ReadDisable;
       reg2_read_o            = `ReadDisable;
+    end
+
+    if (inst_i == `EXE_ERET)  // treated as a exception, processed at MEM stage
+    begin
+      aluop_o                = `EXE_ERET_OP;
+      alusel_o               = `EXE_RES_NOP;
+      wreg_o                 = `WriteDisable;
+      instvalid              = `InstValid;
+      reg1_read_o            = `ReadDisable;
+      reg2_read_o            = `ReadDisable;
+      excep_type_eret        = `True_v;
     end
   end //if-else rst_n
 end //always

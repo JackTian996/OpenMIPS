@@ -69,7 +69,13 @@ module ex
       //mem stage cp0 wdata forward
     input                                        mem_cp0_we_i,
     input                                  [4:0] mem_cp0_waddr_i,
-    input                              [`RegBus] mem_cp0_wdata_i
+    input                              [`RegBus] mem_cp0_wdata_i,
+    //exception
+    input                              [`RegBus] curr_inst_addr_i,
+    input                                 [31:0] excep_type_i,
+    output                             [`RegBus] curr_inst_addr_o,
+    output reg                            [31:0] excep_type_o,
+    output                                       is_in_delayslot_o
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -79,6 +85,8 @@ module ex
 // Internal Signals Declarations
 // -----------------------------------------------------------------------------
 reg                                    [`RegBus] logicout;
+reg                                              ovassert;
+reg                                              trapassert;
 reg                                    [`RegBus] cp0_rdata_final;
 reg                              [`DoubleRegBus] hilo_tmp1;
 reg                                              stallreq_for_madd_msub;
@@ -264,7 +272,11 @@ end
 // --------------------> get reg2_i 2's complete code
 assign reg2_i_mux            = ((aluop_i == `EXE_SUB_OP)  ||
                                 (aluop_i == `EXE_SUBU_OP) ||
-                                (aluop_i == `EXE_SLT_OP)) ?
+                                (aluop_i == `EXE_SLT_OP)  ||
+                                (aluop_i == `EXE_TLT_OP)  ||
+                                (aluop_i == `EXE_TLTI_OP) ||
+                                (aluop_i == `EXE_TGE_OP)  ||
+                                (aluop_i == `EXE_TGEI_OP)) ?
                                 (~reg2_i + 1'b1) : reg2_i;
 
 // --------------------> general sum result
@@ -276,10 +288,50 @@ assign ov_sum                = ((!reg1_i[31] && !reg2_i_mux[31]) && result_sum[3
                                ((reg1_i[31] && reg2_i_mux[31]) && !result_sum[31]);
 
 // --------------------> SLT/SLTU reg1 less than reg2 check
-assign reg1_lt_reg2          = (aluop_i == `EXE_SLT_OP) ? ((reg1_i[31] && !reg2_i[31]) ||
-                                                           (!reg1_i[31] && !reg2_i[31] && result_sum[31]) ||
-                                                           (reg1_i[31] && reg2_i[31] && result_sum[31]))
+assign reg1_lt_reg2          = ((aluop_i == `EXE_SLT_OP) || (aluop_i == `EXE_TLT_OP) || (aluop_i == `EXE_TLTI_OP) ||
+                                (aluop_i == `EXE_TGE_OP) || (aluop_i == `EXE_TGEI_OP)) ?
+                               ((reg1_i[31] && !reg2_i[31]) || (!reg1_i[31] && !reg2_i[31] && result_sum[31]) || (reg1_i[31] && reg2_i[31] && result_sum[31]))
                                                         : (reg1_i < reg2_i);
+
+// --------------------> exception
+always @(*)
+begin : EXCEP_TYPE_O_PROC
+  excep_type_o               = excep_type_i;
+  excep_type_o[11:10]        = {ovassert,trapassert};
+end
+
+assign is_in_delayslot_o     = is_in_delayslot_i;
+assign curr_inst_addr_o      = curr_inst_addr_i;
+
+always @(*)
+begin : OVASSERT_PROC
+  if (rst_n == `RstEnable)
+    ovassert                 = 1'b0;
+  else if ((ov_check_op == 1'b1) && (ov_sum == 1'b1))
+    ovassert                 = 1'b1;
+  else
+    ovassert                 = 1'b0;
+end
+
+always @(*)
+begin : TRAPASSERT_PROC
+  if (rst_n == `RstEnable)
+    trapassert               = `TrapAssert;
+  else
+  begin
+    case (aluop_i)
+      `EXE_TEQ_OP,`EXE_TEQI_OP:
+        trapassert           = (reg1_i == reg2_i) ? `TrapAssert : `TrapDessert;
+      `EXE_TGE_OP,`EXE_TGEI_OP,`EXE_TGEU_OP,`EXE_TGEIU_OP:
+        trapassert           = (reg1_lt_reg2 == 1'b0) ? `TrapAssert : `TrapDessert;
+      `EXE_TLT_OP,`EXE_TLTI_OP,`EXE_TLTU_OP,`EXE_TLTIU_OP:
+        trapassert           = (reg1_lt_reg2 == 1'b1) ? `TrapAssert : `TrapDessert;
+      `EXE_TNE_OP,`EXE_TNEI_OP:
+        trapassert           = (reg1_i != reg2_i) ? `TrapAssert : `TrapDessert;
+      default : trapassert   = `TrapDessert;
+    endcase
+  end
+end
 
 // --------------------> not reg1_i
 assign reg1_i_not            = ~reg1_i;
@@ -509,26 +561,26 @@ always @(*)
 begin
   if (rst_n == `RstEnable)
   begin
-    cp0_we_o      = `WriteDisable;
-    cp0_waddr_o   = 5'b0;
-    cp0_raddr_o   = 5'b0;
-    cp0_wdata_o   = `ZeroWord;
+    cp0_we_o                 = `WriteDisable;
+    cp0_waddr_o              = 5'b0;
+    cp0_raddr_o              = 5'b0;
+    cp0_wdata_o              = `ZeroWord;
   end
   else
   begin
-    cp0_we_o      = `WriteDisable;
-    cp0_waddr_o   = 5'b0;
-    cp0_raddr_o   = 5'b0;
-    cp0_wdata_o   = `ZeroWord;
+    cp0_we_o                 = `WriteDisable;
+    cp0_waddr_o              = 5'b0;
+    cp0_raddr_o              = 5'b0;
+    cp0_wdata_o              = `ZeroWord;
     if (aluop_i == `EXE_MFC0_OP)
     begin
-      cp0_raddr_o   = inst_i[15:11];   //rd    wd = rt
+      cp0_raddr_o            = inst_i[15:11];   //rd    wd = rt
     end
     else if (aluop_i == `EXE_MTC0_OP)
     begin
-      cp0_we_o      = `WriteEnable;
-      cp0_waddr_o   = inst_i[15:11]; //rd
-      cp0_wdata_o   = reg2_i;        //rt
+      cp0_we_o               = `WriteEnable;
+      cp0_waddr_o            = inst_i[15:11]; //rd
+      cp0_wdata_o            = reg2_i;        //rt
     end
   end
 end

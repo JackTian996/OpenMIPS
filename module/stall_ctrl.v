@@ -12,7 +12,12 @@ module stall_ctrl
     input                                        rst_n,
     input                                        stallreq_from_id,
     input                                        stallreq_from_ex,
-    output reg                             [5:0] stall
+    output reg                             [5:0] stall,
+    //excetion
+    input                                 [31:0] excep_type_i,
+    input                              [`RegBus] cp0_epc_i,
+    output reg                                   flush,
+    output reg                         [`RegBus] excep_vector
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -26,7 +31,6 @@ module stall_ctrl
 // Main Code
 // -----------------------------------------------------------------------------
 // ---->TODO
-
 always @(*)
 begin : STALL_PROC
   if (rst_n == `RstEnable)
@@ -39,6 +43,33 @@ begin : STALL_PROC
     stall                    = {6{1'b0}};
 end
 
+always @(*)
+begin : FLUSH_PROC
+  if (rst_n == `RstEnable)
+    flush                    = {1{1'b0}};
+  else if ((|excep_type_i) == 1'b1)
+    flush                    = 1'b1;
+  else
+    flush                    = 1'b0;
+end
+
+always @(*)
+begin : EXCEP_VECTOR_PROC
+  if (rst_n == `RstEnable)
+    excep_vector             = {32{1'b0}};
+  else
+  begin
+    case (excep_type_i)
+      32'h1: excep_vector    = 32'h20;
+      32'h8: excep_vector    = 32'h40;
+      32'ha: excep_vector    = 32'h40;
+      32'hd: excep_vector    = 32'h40;
+      32'hc: excep_vector    = 32'h40;
+      32'he: excep_vector    = cp0_epc_i;
+      default: excep_vector  = 32'h40;
+    endcase
+  end
+end
 
 
 // -----------------------------------------------------------------------------

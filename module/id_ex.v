@@ -23,6 +23,10 @@ module id_ex
     input                              [`RegBus] id_link_address,
     input                                        nxt_is_in_delayslot_i,
     input                              [`RegBus] id_inst,
+    //exception
+    input                                        flush,
+    input                              [`RegBus] id_curr_inst_addr,
+    input                                 [31:0] id_excep_type,
 
     output reg                     [`RegAddrBus] ex_wd,
     output reg                                   ex_wreg,
@@ -33,7 +37,10 @@ module id_ex
     output reg                                   ex_is_in_delayslot,
     output reg                         [`RegBus] ex_link_address,
     output reg                                   is_in_delayslot_o,
-    output reg                         [`RegBus] ex_inst
+    output reg                         [`RegBus] ex_inst,
+    //exception
+    output reg                         [`RegBus] ex_curr_inst_addr,
+    output reg                            [31:0] ex_excep_type
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -61,6 +68,23 @@ begin
     ex_link_address          <= `ZeroWord;
     is_in_delayslot_o        <= `NotInDelaySlot;
     ex_inst                  <= `ZeroWord;
+    ex_curr_inst_addr        <= `ZeroWord;
+    ex_excep_type            <= `ZeroWord;
+  end
+  else if (flush == 1'b1)
+  begin
+    ex_wd                    <= `NOPRegAddr;
+    ex_wreg                  <= `WriteDisable;
+    ex_aluop                 <= `EXE_NOP_OP;
+    ex_alusel                <= `EXE_RES_NOP;
+    ex_reg1                  <= `ZeroWord;
+    ex_reg2                  <= `ZeroWord;
+    ex_is_in_delayslot       <= `NotInDelaySlot;
+    ex_link_address          <= `ZeroWord;
+    is_in_delayslot_o        <= `NotInDelaySlot;
+    ex_inst                  <= `ZeroWord;
+    ex_curr_inst_addr        <= `ZeroWord;
+    ex_excep_type            <= `ZeroWord;
   end
   else if ((stall[2] == `Stop) && (stall[3] == `NoStop))
   begin
@@ -74,6 +98,8 @@ begin
     ex_link_address          <= `ZeroWord;
     //is_in_delayslot_o        <= `NotInDelaySlot;  //keep when stall
     ex_inst                  <= `ZeroWord;
+    ex_curr_inst_addr        <= `ZeroWord;
+    ex_excep_type            <= `ZeroWord;
   end
   else if (stall[2] == `NoStop)
   begin
@@ -87,6 +113,8 @@ begin
     ex_link_address          <= id_link_address;
     is_in_delayslot_o        <= nxt_is_in_delayslot_i;
     ex_inst                  <= id_inst;
+    ex_curr_inst_addr        <= id_curr_inst_addr;
+    ex_excep_type            <= id_excep_type;
   end
 end
 

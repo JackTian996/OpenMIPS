@@ -24,7 +24,10 @@ module cp0_reg
     output                                [31:0] epc_o,
     output                                [31:0] prid_o,
     output                                [31:0] config_o,
-    output                                       timer_intr_o
+    output                                       timer_intr_o,
+    input                              [`RegBus] curr_inst_addr_i,
+    input                                 [31:0] excep_type_i,
+    input                                        is_in_delayslot_i
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -125,7 +128,7 @@ begin : STATUS_PROC
     IntrMask                 <= 8'b0;  //1: masked
     UserMode                 <= 1'b0;  //1: kernel; 0: user
     ExcpDataErr              <= 1'b0;  //parity or ECC data check
-    ExcpLevl                 <= 1'b0;  //turn to kernel when excp and disable intr
+    //ExcpLevl                 <= 1'b0;  //turn to kernel when excp and disable intr
     IntrEnable               <= 1'b0;
   end
   else if ((we_i == `WriteEnable) && (waddr_i == `CP0_REG_STATUS))
@@ -134,29 +137,40 @@ begin : STATUS_PROC
     SoftReset                <= wdata_i[20];
     NoMaskIntr               <= wdata_i[19];
     IntrMask                 <= wdata_i[15:8];
-    ExcpLevl                 <= wdata_i[1];
+    //ExcpLevl                 <= wdata_i[1];
     IntrEnable               <= wdata_i[0];
   end
 end
 
-assign status_o              = {CoprocesUse,ReducePower,1'b0,ResetEadian,1'b0,BootExcepVec,
-                                TlbShutdown,SoftReset,NoMaskIntr,3'b0,IntrMask,1'b0,UserMode,
+always @(posedge clk or negedge rst_n)
+begin : EXCPLEVL_PROC
+  if (rst_n == `RstEnable)
+    ExcpLevl                 <= {1{1'b0}};
+  else if (excep_type_i == 32'he)    //eret
+    ExcpLevl                 <= 1'b0;
+  else if ((excep_type_i != 32'h0) && (ExcpLevl == 1'b0))    //others
+    ExcpLevl                 <= 1'b1;
+  else if ((we_i == `WriteEnable) && (waddr_i == `CP0_REG_STATUS)) //sw
+    ExcpLevl                 <= wdata_i[1];
+end
+
+assign status_o              = {CoprocesUse,ReducePower,1'b0,ResetEadian,2'b0,BootExcepVec,
+                                TlbShutdown,SoftReset,NoMaskIntr,3'b0,IntrMask,3'b0,UserMode,
                                 1'b0,ExcpDataErr,ExcpLevl,IntrEnable};
 
 // --------------------> Cause
-
 always @(posedge clk or negedge rst_n)
 begin : CAUSE_PROC
   if (rst_n == `RstEnable)
   begin
-    BranchDelaySlot          <= 1'b0;
+    //BranchDelaySlot          <= 1'b0;
     CoprocesErr              <= 2'b0;
     DisableCount             <= 1'b0;
     ProfCountIntr            <= 1'b0;
     IntrVec                  <= 1'b0;
     WatchPend                <= 1'b0;
     SwIntrPend               <= 2'b0;
-    ExcpCode                 <= 5'b0;
+    //ExcpCode                 <= 5'b0;
   end
   else if ((we_i == `WriteEnable) && (waddr_i == `CP0_REG_CAUSE))
   begin
@@ -174,6 +188,35 @@ begin : HW_INTR_PROC
     HwIntrPend               <= intr_i;
 end
 
+// eret is a special, dont need to updata
+always @(posedge clk or negedge rst_n)
+begin : EXCPCODE_PROC
+  if (rst_n == `RstEnable)
+    ExcpCode                 <= {5{1'b0}};
+  else if (excep_type_i == 32'h1)           // intr
+    ExcpCode                 <= 5'b00000;
+  else if (excep_type_i == 32'h8)           // syscall
+    ExcpCode                 <= 5'b01000;
+  else if (excep_type_i == 32'ha)           // Invalid
+    ExcpCode                 <= 5'b01010;
+  else if (excep_type_i == 32'hd)           // Ov
+    ExcpCode                 <= 5'b01101;
+  else if (excep_type_i == 32'hc)           // Trap
+    ExcpCode                 <= 5'b01100;
+end
+
+always @(posedge clk or negedge rst_n)
+begin : BRANCHDELAYSLOT_PROC
+  if (rst_n == 1'b0)
+    BranchDelaySlot          <= {1{1'b0}};
+  else if ((ExcpLevl == 1'b0) && (is_in_delayslot_i == 1'b1) &&
+           (excep_type_i != 32'h0) && (excep_type_i != 32'he))
+    BranchDelaySlot          <= 1'b1;
+  else if ((ExcpLevl == 1'b0) && (is_in_delayslot_i == 1'b0) &&
+           (excep_type_i != 32'h0) && (excep_type_i != 32'he))
+    BranchDelaySlot          <= 1'b0;
+end
+
 assign cause_o               = {BranchDelaySlot,1'b0,CoprocesErr,DisableCount,ProfCountIntr,1'b0,
                                 IntrVec,WatchPend,1'b0,HwIntrPend,SwIntrPend,1'b0,ExcpCode,2'b0};
 
@@ -182,6 +225,12 @@ always @(posedge clk or negedge rst_n)
 begin : EPC_PROC
   if (rst_n == `RstEnable)
     epc                      <= {32{1'b0}};
+  else if ((ExcpLevl == 1'b0) && (is_in_delayslot_i == 1'b1) &&
+           (excep_type_i != 32'h0) && (excep_type_i != 32'he))
+    epc                      <= curr_inst_addr_i - 4;
+  else if ((ExcpLevl == 1'b0) && (is_in_delayslot_i == 1'b0) &&
+           (excep_type_i != 32'h0) && (excep_type_i != 32'he))
+    epc                      <= curr_inst_addr_i;
   else if ((we_i == `WriteEnable) && (waddr_i == `CP0_REG_EPC))
     epc                      <= wdata_i;
 end

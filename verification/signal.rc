@@ -2,7 +2,7 @@ Magic 271485
 Revision Verdi_O-2018.09-SP2
 
 ; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
-viewPort 0 27 1920 482 278 65
+viewPort 0 27 1920 408 198 65
 
 ; File list:
 ; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
@@ -16,19 +16,20 @@ signalSpacing 5
 
 ; windowTimeUnit is used for zoom, cursor & marker
 ; waveform viewport range
-zoom 395089.042564 1081243.109758
+zoom 0.000000 3391265.585256
 cursor 710000.000000
-marker 690000.000000
+marker 0.000000
 
 ; user define markers
 ; userMarker time_pos marker_name color linestyle
-userMarker 650000 WR_REG1 ID_GREEN5 long_dashed
-userMarker 690000 ERR ID_GREEN5 long_dashed
+userMarker 510000 ERET ID_GREEN5 long_dashed
+userMarker 450000 Error_Inst ID_GREEN5 long_dashed
+userMarker 330000 syscall ID_GREEN5 long_dashed
 
 ; visible top row signal index
 top 0
 ; marker line index
-markerPos 6
+markerPos 34
 
 ; event list
 ; addEvent event_name event_expression
@@ -50,29 +51,42 @@ curSTATUS ByChange
 
 addGroup "G1"
 activeDirFile "" "/home/ICer/ic_prjs/open_mips/verification/tb.fsdb"
+addSignal -h 15 /openmips_min_scop_tb/u_openmips_min_scop/u_openmips/u_ex_mem/flush
 addSignal -h 15 /openmips_min_scop_tb/u_openmips_min_scop/u_openmips/u_if_id/if_pc[31:0]
 addSignal -h 15 -holdScope if_inst[31:0]
-addSignal -h 15 /openmips_min_scop_tb/u_openmips_min_scop/u_openmips/u_mem/reg2_i[31:0]
-addSignal -h 15 /openmips_min_scop_tb/u_openmips_min_scop/u_openmips/u_id/reg2_data_i[31:0]
-addSignal -h 15 -holdScope reg1_read_o
-addSignal -h 15 -holdScope reg1_addr_o[4:0]
-addSignal -c ID_PURPLE5 -ls solid -lw 1 -h 15 -holdScope reg2_read_o
-addSignal -h 15 -holdScope reg2_addr_o[4:0]
-addSignal -c ID_PURPLE5 -ls solid -lw 1 -h 15 -holdScope reg2_data_i[31:0]
-addSignal -c ID_PURPLE5 -ls solid -lw 1 -h 15 -holdScope reg2_o[31:0]
-addSignal -h 15 -UNSIGNED -BIN -holdScope op[5:0]
 addGroup "G2"
-addSignal -h 15 /openmips_min_scop_tb/u_openmips_min_scop/u_openmips/u_mem_wb/wb_wreg
-addSignal -h 15 -holdScope wb_wd[4:0]
-addSignal -h 15 -holdScope wb_wdata[31:0]
+addSignal -h 15 /openmips_min_scop_tb/u_openmips_min_scop/u_openmips/u_regfile/we
+addSignal -h 15 -holdScope waddr[4:0]
+addSignal -h 15 -holdScope wdata[31:0]
 addGroup "G3"
 addSignal -h 15 /openmips_min_scop_tb/u_openmips_min_scop/u_data_ram/ce
 addSignal -h 15 -holdScope we
 addSignal -h 15 -holdScope addr[31:0]
-addSignal -h 15 -UNSIGNED -BIN -holdScope sel[3:0]
+addSignal -h 15 -holdScope sel[3:0]
 addSignal -h 15 -holdScope data_i[31:0]
 addSignal -h 15 -holdScope data_o[31:0]
 addGroup "G4"
+addSignal -h 15 /openmips_min_scop_tb/u_openmips_min_scop/u_openmips/u_hilo_reg/we
+addSignal -h 15 -holdScope hi_i[31:0]
+addSignal -h 15 -holdScope lo_i[31:0]
+addGroup "G5"
+addSignal -h 15 /openmips_min_scop_tb/u_openmips_min_scop/u_openmips/u_cp0_reg/waddr_i[4:0]
+addSignal -h 15 -holdScope we_i
+addSignal -h 15 -holdScope wdata_i[31:0]
+addSignal -h 15 -holdScope curr_inst_addr_i[31:0]
+addSignal -h 15 -holdScope excep_type_i[31:0]
+addSignal -h 15 -holdScope ExcpLevl
+addSignal -h 15 -holdScope is_in_delayslot_i
+addSignal -h 15 -holdScope curr_inst_addr_i[31:0]
+addSignal -h 15 -holdScope epc[31:0]
+addSignal -h 15 -holdScope raddr_i[4:0]
+addSignal -h 15 -holdScope epc_o[31:0]
+addSignal -h 15 /openmips_min_scop_tb/u_openmips_min_scop/u_openmips/u_ex/cp0_raddr_o[4:0]
+addSignal -h 15 -holdScope cp0_rdata_i[31:0]
+addSignal -h 15 -holdScope wb_cp0_we_i
+addSignal -h 15 -holdScope mem_cp0_we_i
+addGroup "G6"
+addGroup "G7"
 
 ; getSignalForm Scope Hierarchy Status
 ; active file of getSignalForm

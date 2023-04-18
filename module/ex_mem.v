@@ -12,6 +12,7 @@ module ex_mem
     (
     input                                        clk,
     input                                        rst_n,
+
     input                              [`RegBus] ex_wdata,
     input                          [`RegAddrBus] ex_wd,
     input                                        ex_wreg,
@@ -19,6 +20,7 @@ module ex_mem
     input                              [`RegBus] ex_hi,
     input                              [`RegBus] ex_lo,
     input                                  [5:0] stall,
+    input                                        flush,
     input                        [`DoubleRegBus] hilo_i,
     input                                  [1:0] cnt_i,
     input                              [`RegBus] ex_mem_addr,
@@ -26,8 +28,10 @@ module ex_mem
     input                              [`RegBus] ex_reg2,
     input                                        ex_cp0_we,
     input                                  [4:0] ex_cp0_waddr,
-    input                                  [4:0] ex_cp0_raddr,
     input                              [`RegBus] ex_cp0_wdata,
+    input                              [`RegBus] ex_curr_inst_addr,
+    input                                 [31:0] ex_excep_type,
+    input                                        ex_is_in_delayslot,
     output reg                         [`RegBus] mem_wdata,
     output reg                     [`RegAddrBus] mem_wd,
     output reg                                   mem_wreg,
@@ -41,8 +45,10 @@ module ex_mem
     output reg                         [`RegBus] mem_reg2,
     output reg                                   mem_cp0_we,
     output reg                             [4:0] mem_cp0_waddr,
-    output reg                             [4:0] mem_cp0_raddr,
-    output reg                         [`RegBus] mem_cp0_wdata
+    output reg                         [`RegBus] mem_cp0_wdata,
+    output reg                         [`RegBus] mem_curr_inst_addr,
+    output reg                            [31:0] mem_excep_type,
+    output reg                                   mem_is_in_delayslot
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -73,8 +79,30 @@ begin
     mem_reg2                 <= `ZeroWord;
     mem_cp0_we               <= `WriteDisable;
     mem_cp0_waddr            <= 5'b0;
-    mem_cp0_raddr            <= 5'b0;
     mem_cp0_wdata            <= `ZeroWord;
+    mem_curr_inst_addr       <= `ZeroWord;
+    mem_excep_type           <= `ZeroWord;
+    mem_is_in_delayslot      <= 1'b0;
+  end
+  else if (flush == 1'b1)
+  begin
+    mem_wdata                <= `ZeroWord;
+    mem_wd                   <= `NOPRegAddr;
+    mem_wreg                 <= `WriteDisable;
+    mem_whilo                <= `WriteDisable;
+    mem_hi                   <= `ZeroWord;
+    mem_lo                   <= `ZeroWord;
+    hilo_o                   <= hilo_i;
+    cnt_o                    <= cnt_i;
+    mem_mem_addr             <= `ZeroWord;
+    mem_aluop                <= `EXE_NOP_OP;
+    mem_reg2                 <= `ZeroWord;
+    mem_cp0_we               <= `WriteDisable;
+    mem_cp0_waddr            <= 5'b0;
+    mem_cp0_wdata            <= `ZeroWord;
+    mem_curr_inst_addr       <= `ZeroWord;
+    mem_excep_type           <= `ZeroWord;
+    mem_is_in_delayslot      <= 1'b0;
   end
   else if ((stall[3] == `Stop) && (stall[4] == `NoStop))
   begin
@@ -91,8 +119,10 @@ begin
     mem_reg2                 <= `ZeroWord;
     mem_cp0_we               <= `WriteDisable;
     mem_cp0_waddr            <= 5'b0;
-    mem_cp0_raddr            <= 5'b0;
     mem_cp0_wdata            <= `ZeroWord;
+    mem_curr_inst_addr       <= `ZeroWord;
+    mem_excep_type           <= `ZeroWord;
+    mem_is_in_delayslot      <= 1'b0;
   end
   else if (stall[3] == `NoStop)
   begin
@@ -109,8 +139,10 @@ begin
     mem_reg2                 <= ex_reg2;
     mem_cp0_we               <= ex_cp0_we;
     mem_cp0_waddr            <= ex_cp0_waddr;
-    mem_cp0_raddr            <= ex_cp0_raddr;
     mem_cp0_wdata            <= ex_cp0_wdata;
+    mem_curr_inst_addr       <= ex_curr_inst_addr;
+    mem_excep_type           <= ex_excep_type;
+    mem_is_in_delayslot      <= ex_is_in_delayslot;
   end
 end
 
