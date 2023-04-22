@@ -10,22 +10,29 @@
 `include "defines.v"
 module openmips
     (
-    output                                       rom_ce_o,
       /*AUTOINPUT*/
       // Beginning of automatic inputs (from unused autoinst inputs)
     input                                        clk,                          // To u_pc_reg of pc_reg.v, ...
-    input                              [`RegBus] mem_data_i,                   // To u_mem of mem.v
-    input                             [`InstBus] rom_data_i,                   // To u_if_id of if_id.v
+    input                                        mem_wishbone_ack_i,           // To u_mem_wishbone of ram2wishbone_sync_bridge.v
+    input                                 [31:0] mem_wishbone_data_i,          // To u_mem_wishbone of ram2wishbone_sync_bridge.v
+    input                                        pc_wishbone_ack_i,            // To u_pc_wishbone of ram2wishbone_sync_bridge.v
+    input                                 [31:0] pc_wishbone_data_i,           // To u_pc_wishbone of ram2wishbone_sync_bridge.v
     input                                        rst_n,                        // To u_pc_reg of pc_reg.v, ...
       // End of automatics
-    output                        [`InstAddrBus] rom_addr_o,
       /*AUTOOUTPUT*/
       // Beginning of automatic outputs (from unused autoinst outputs)
-    output                             [`RegBus] mem_addr_o,                   // From u_mem of mem.v
-    output                                       mem_ce_o,                     // From u_mem of mem.v
-    output                             [`RegBus] mem_data_o,                   // From u_mem of mem.v
-    output                                 [3:0] mem_sel_o,                    // From u_mem of mem.v
-    output                                       mem_we_o                      // From u_mem of mem.v
+    output                                [31:0] mem_wishbone_addr_o,          // From u_mem_wishbone of ram2wishbone_sync_bridge.v
+    output                                       mem_wishbone_cyc_o,           // From u_mem_wishbone of ram2wishbone_sync_bridge.v
+    output                                [31:0] mem_wishbone_data_o,          // From u_mem_wishbone of ram2wishbone_sync_bridge.v
+    output                                 [3:0] mem_wishbone_sel_o,           // From u_mem_wishbone of ram2wishbone_sync_bridge.v
+    output                                       mem_wishbone_stb_o,           // From u_mem_wishbone of ram2wishbone_sync_bridge.v
+    output                                       mem_wishbone_we_o,            // From u_mem_wishbone of ram2wishbone_sync_bridge.v
+    output                                [31:0] pc_wishbone_addr_o,           // From u_pc_wishbone of ram2wishbone_sync_bridge.v
+    output                                       pc_wishbone_cyc_o,            // From u_pc_wishbone of ram2wishbone_sync_bridge.v
+    output                                [31:0] pc_wishbone_data_o,           // From u_pc_wishbone of ram2wishbone_sync_bridge.v
+    output                                 [3:0] pc_wishbone_sel_o,            // From u_pc_wishbone of ram2wishbone_sync_bridge.v
+    output                                       pc_wishbone_stb_o,            // From u_pc_wishbone of ram2wishbone_sync_bridge.v
+    output                                       pc_wishbone_we_o              // From u_pc_wishbone of ram2wishbone_sync_bridge.v
       // End of automatics
     );
 // -----------------------------------------------------------------------------
@@ -98,7 +105,9 @@ wire                                             id_wreg;                      /
 wire                              [`InstAddrBus] if_pc;                        // From u_pc_reg of pc_reg.v
 wire                                             is_in_delayslot_o;            // From u_id_ex of id_ex.v
 wire                                   [`RegBus] lo_i;                         // From u_hilo_reg of hilo_reg.v
+wire                                   [`RegBus] mem_addr_o;                   // From u_mem of mem.v
 wire                                 [`AluOpBus] mem_aluop;                    // From u_ex_mem of ex_mem.v
+wire                                             mem_ce_o;                     // From u_mem of mem.v
 wire                                   [`RegBus] mem_cp0_epc_o;                // From u_mem of mem.v
 wire                                       [4:0] mem_cp0_waddr_i;              // From u_ex_mem of ex_mem.v
 wire                                       [4:0] mem_cp0_waddr_o;              // From u_mem of mem.v
@@ -108,6 +117,8 @@ wire                                             mem_cp0_we_i;                 /
 wire                                             mem_cp0_we_o;                 // From u_mem of mem.v
 wire                                   [`RegBus] mem_curr_inst_addr_i;         // From u_ex_mem of ex_mem.v
 wire                                   [`RegBus] mem_curr_inst_addr_o;         // From u_mem of mem.v
+wire                                      [31:0] mem_data_i;                   // From u_mem_wishbone of ram2wishbone_sync_bridge.v
+wire                                   [`RegBus] mem_data_o;                   // From u_mem of mem.v
 wire                                      [31:0] mem_excep_type_i;             // From u_ex_mem of ex_mem.v
 wire                                      [31:0] mem_excep_type_o;             // From u_mem of mem.v
 wire                                   [`RegBus] mem_hi;                       // From u_ex_mem of ex_mem.v
@@ -121,10 +132,12 @@ wire                                   [`RegBus] mem_lo;                       /
 wire                                   [`RegBus] mem_lo_o;                     // From u_mem of mem.v
 wire                                   [`RegBus] mem_mem_addr;                 // From u_ex_mem of ex_mem.v
 wire                                   [`RegBus] mem_reg2;                     // From u_ex_mem of ex_mem.v
+wire                                       [3:0] mem_sel_o;                    // From u_mem of mem.v
 wire                               [`RegAddrBus] mem_wd;                       // From u_ex_mem of ex_mem.v
 wire                               [`RegAddrBus] mem_wd_o;                     // From u_mem of mem.v
 wire                                   [`RegBus] mem_wdata;                    // From u_ex_mem of ex_mem.v
 wire                                   [`RegBus] mem_wdata_o;                  // From u_mem of mem.v
+wire                                             mem_we_o;                     // From u_mem of mem.v
 wire                                             mem_whilo;                    // From u_ex_mem of ex_mem.v
 wire                                             mem_whilo_o;                  // From u_mem of mem.v
 wire                                             mem_wreg;                     // From u_ex_mem of ex_mem.v
@@ -136,10 +149,14 @@ wire                                             reg1_read_o;                  /
 wire                               [`RegAddrBus] reg2_addr_o;                  // From u_id of id.v
 wire                                   [`RegBus] reg2_data_i;                  // From u_regfile of regfile.v
 wire                                             reg2_read_o;                  // From u_id of id.v
+wire                                             rom_ce_o;                     // From u_pc_reg of pc_reg.v
+wire                                      [31:0] rom_data_i;                   // From u_pc_wishbone of ram2wishbone_sync_bridge.v
 wire                                             signed_div_o;                 // From u_ex of ex.v
 wire                                       [5:0] stall;                        // From u_stall_ctrl of stall_ctrl.v
 wire                                             stallreq_from_ex;             // From u_ex of ex.v
 wire                                             stallreq_from_id;             // From u_id of id.v
+wire                                             stallreq_from_if;             // From u_pc_wishbone of ram2wishbone_sync_bridge.v
+wire                                             stallreq_from_mem;            // From u_mem_wishbone of ram2wishbone_sync_bridge.v
 wire                                      [31:0] status_o;                     // From u_cp0_reg of cp0_reg.v
 wire                                             timer_intr_o;                 // From u_cp0_reg of cp0_reg.v
 wire                                       [4:0] wb_cp0_waddr_i;               // From u_mem_wb of mem_wb.v
@@ -182,7 +199,48 @@ pc_reg u_pc_reg
     .branch_flag_i                     (branch_flag_o                          ), // Templated
     .branch_target_address_i           (branch_target_address_o[`RegBus]       )); // Templated
 
-assign rom_addr_o            = if_pc;
+/* ram2wishbone_sync_bridge AUTO_TEMPLATE (
+    .stall_i                           (stall[]                                ),
+    .flush_i                           (flush[]                                ),
+    .stall_req                         (stallreq_from_if[]                     ),
+    .ram_ce_i                          (rom_ce_o[]                             ),
+    .ram_we_i                          (1'b0                                   ),
+    .ram_addr_i                        (if_pc[]                                ),
+    .ram_data_i                        (32'b0                                  ),
+    .ram_sel_i                         (4'b1111                                ),
+    .ram_data_o                        (rom_data_i[]                           ),
+    .wishbone.*                        (pc_@"vl-name"[]                        ),
+   );*/
+ram2wishbone_sync_bridge
+   #(
+    .ADDR_WIDTH                        (32                                     ),
+    .DATA_WIDTH                        (32                                     ),
+    .SEL_WIDTH                         (4                                      )
+    )
+u_pc_wishbone
+    (
+/*AUTOINST*/
+     // Outputs
+    .stall_req                         (stallreq_from_if                       ), // Templated
+    .ram_data_o                        (rom_data_i[31:0]                       ), // Templated
+    .wishbone_cyc_o                    (pc_wishbone_cyc_o                      ), // Templated
+    .wishbone_stb_o                    (pc_wishbone_stb_o                      ), // Templated
+    .wishbone_we_o                     (pc_wishbone_we_o                       ), // Templated
+    .wishbone_addr_o                   (pc_wishbone_addr_o[31:0]               ), // Templated
+    .wishbone_data_o                   (pc_wishbone_data_o[31:0]               ), // Templated
+    .wishbone_sel_o                    (pc_wishbone_sel_o[3:0]                 ), // Templated
+     // Inputs
+    .clk                               (clk                                    ),
+    .rst_n                             (rst_n                                  ),
+    .stall_i                           (stall[5:0]                             ), // Templated
+    .flush_i                           (flush                                  ), // Templated
+    .ram_ce_i                          (rom_ce_o                               ), // Templated
+    .ram_we_i                          (1'b0                                   ), // Templated
+    .ram_addr_i                        (if_pc[31:0]                            ), // Templated
+    .ram_data_i                        (32'b0                                  ), // Templated
+    .ram_sel_i                         (4'b1111                                ), // Templated
+    .wishbone_data_i                   (pc_wishbone_data_i[31:0]               ), // Templated
+    .wishbone_ack_i                    (pc_wishbone_ack_i                      )); // Templated
 
  /* if_id AUTO_TEMPLATE (
     .if_inst                           (rom_data_i[]                           ),
@@ -589,6 +647,44 @@ ex_mem u_ex_mem
     .wb_cp0_waddr_i                    (wb_cp0_waddr_i[4:0]                    ),
     .wb_cp0_wdata_i                    (wb_cp0_wdata_i[`RegBus]                ));
 
+/* ram2wishbone_sync_bridge AUTO_TEMPLATE (
+    .stall_i                           (stall[]                                ),
+    .flush_i                           (flush[]                                ),
+    .stall_req                         (stallreq_from_mem[]                    ),
+    .ram_\(.*\)_i                      (mem_\1_o[]                             ),
+    .ram_\(.*\)_o                      (mem_\1_i[]                             ),
+    .wishbone.*                        (mem_@"vl-name"[]                       ),
+   );*/
+ram2wishbone_sync_bridge
+#(
+    .ADDR_WIDTH                        (32                                     ),
+    .DATA_WIDTH                        (32                                     ),
+    .SEL_WIDTH                         (4                                      )
+)
+u_mem_wishbone (
+/*AUTOINST*/
+                    // Outputs
+    .stall_req                         (stallreq_from_mem                      ), // Templated
+    .ram_data_o                        (mem_data_i[31:0]                       ), // Templated
+    .wishbone_cyc_o                    (mem_wishbone_cyc_o                     ), // Templated
+    .wishbone_stb_o                    (mem_wishbone_stb_o                     ), // Templated
+    .wishbone_we_o                     (mem_wishbone_we_o                      ), // Templated
+    .wishbone_addr_o                   (mem_wishbone_addr_o[31:0]              ), // Templated
+    .wishbone_data_o                   (mem_wishbone_data_o[31:0]              ), // Templated
+    .wishbone_sel_o                    (mem_wishbone_sel_o[3:0]                ), // Templated
+                    // Inputs
+    .clk                               (clk                                    ),
+    .rst_n                             (rst_n                                  ),
+    .stall_i                           (stall[5:0]                             ), // Templated
+    .flush_i                           (flush                                  ), // Templated
+    .ram_ce_i                          (mem_ce_o                               ), // Templated
+    .ram_we_i                          (mem_we_o                               ), // Templated
+    .ram_addr_i                        (mem_addr_o[31:0]                       ), // Templated
+    .ram_data_i                        (mem_data_o[31:0]                       ), // Templated
+    .ram_sel_i                         (mem_sel_o[3:0]                         ), // Templated
+    .wishbone_data_i                   (mem_wishbone_data_i[31:0]              ), // Templated
+    .wishbone_ack_i                    (mem_wishbone_ack_i                     )); // Templated
+
 /* mem_wb AUTO_TEMPLATE (
     .mem_wdata                         (mem_wdata_o[]                          ),
     .mem_wd                            (mem_wd_o[]                             ),
@@ -669,6 +765,8 @@ stall_ctrl u_stall_ctrl
     .rst_n                             (rst_n                                  ),
     .stallreq_from_id                  (stallreq_from_id                       ),
     .stallreq_from_ex                  (stallreq_from_ex                       ),
+    .stallreq_from_if                  (stallreq_from_if                       ),
+    .stallreq_from_mem                 (stallreq_from_mem                      ),
     .excep_type_i                      (mem_excep_type_o[31:0]                 ), // Templated
     .cp0_epc_i                         (mem_cp0_epc_o[`RegBus]                 )); // Templated
 

@@ -19,6 +19,7 @@
 /home/ICer/ic_prjs/open_mips/module/regfile.v
 /home/ICer/ic_prjs/open_mips/module/hilo_reg.v
 /home/ICer/ic_prjs/open_mips/module/stall_ctrl.v
+/home/ICer/ic_prjs/open_mips/module/ram2wishbone_sync_bridge.v
 /home/ICer/ic_prjs/open_mips/module/openmips.v
-/home/ICer/ic_prjs/open_mips/module/openmips_min_scop.v
-/home/ICer/ic_prjs/open_mips/tb/openmips_min_scop_tb.sv
+///home/ICer/ic_prjs/open_mips/module/openmips_min_scop.v
+///home/ICer/ic_prjs/open_mips/tb/openmips_min_scop_tb.sv

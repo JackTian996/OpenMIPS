@@ -9,6 +9,24 @@
     - [Exception in MIPS32 Arch](#exception-in-mips32-arch)
     - [Precise Exception](#precise-exception)
     - [Exception handle procedure](#exception-handle-procedure)
+  - [Pratical OpenMIPS](#pratical-openmips)
+    - [Pratical OpenMIPS design target](#pratical-openmips-design-target)
+    - [Wishbone interface introduction](#wishbone-interface-introduction)
+      - [Wishbone signals and connection](#wishbone-signals-and-connection)
+      - [Wishbone Sinagle Read Sequence](#wishbone-sinagle-read-sequence)
+      - [Wishbone Sinagle Write Sequence](#wishbone-sinagle-write-sequence)
+      - [Wishbone Bus Bridge](#wishbone-bus-bridge)
+  - [SOPC based Pratical OpenMIPS](#sopc-based-pratical-openmips)
+    - [SOPC MicroArch](#sopc-microarch)
+    - [WB\_CONMAX](#wb_conmax)
+    - [GPIO](#gpio)
+    - [UART Controller](#uart-controller)
+      - [UART Protocol](#uart-protocol)
+        - [UART Data Format](#uart-data-format)
+        - [UART Receiver](#uart-receiver)
+        - [Flow Control](#flow-control)
+        - [Register Table](#register-table)
+    - [Flash Controller](#flash-controller)
 
 <!-- /code_chunk_output -->
 
@@ -66,3 +84,106 @@ Although the exception can occur at random time, the instruction must arrive at 
 - ERET instruction is processed as special exception
 - suport exception nesting
 - Do not support exception priority
+
+## Pratical OpenMIPS
+
+### Pratical OpenMIPS design target
+
+![image](media/fpga.png)
+
+### Wishbone interface introduction
+
+OpenMIPS support Wishbone B2
+
+#### Wishbone signals and connection
+
+![image](media/wishbone_connection.png)
+
+#### Wishbone Sinagle Read Sequence
+
+![image](media/wishbone_read.png)
+
+#### Wishbone Sinagle Write Sequence
+
+![image](media/wishbone_read.png)!
+
+#### Wishbone Bus Bridge
+
+![image](media/wishbone_bus_if.png)
+
+***
+**Note: stall_req_from_if should stall pc,if,id(stall[5:0] = 6'b000111), so that branch instruction can keep order with delayslot instruction.**
+
+## SOPC based Pratical OpenMIPS
+
+### SOPC MicroArch
+
+![image](media/sopc_microarch.png)
+
+### WB_CONMAX
+
+- support max 8 master
+- support max 16 slave
+- integrated arbiter support 1,2,4 priority
+- support multiple communicate between master and slave at one time
+- support Wishbone B2
+
+![image](media/wb_conmax.png)
+
+WB_CONMAX use high 4 bit address to deceide slave number. So each slave can have max 256M space.
+
+| Slave       | Start Address | Start Address |  Size |
+|----------------|---------------------|--------------------|----|
+| SDRAM    |  0x00000000  | 0x0FFFFFFF |  256M    |
+| UART       |  0x10000000  | 0x1FFFFFFF  |   256M   |
+|GPIO         |  0x20000000  | 0x2FFFFFFF  |  256M   |
+| Flash        |  0x30000000 | 0x3FFFFFFF  |   256M   |
+
+### GPIO
+
+- support 32 pins
+- no support bidirectional pons
+- input pins can trigger interrupt
+- no support aux input pins
+- only support one clock domain
+- support Wishbone B
+
+### UART Controller
+
+#### UART Protocol
+
+##### UART Data Format
+
+![image](media/uart.png)
+
+UART buad rate: 9600,19200,38400 etc.
+
+##### UART Receiver
+
+Receiver use higher sample frequency than buad rate, 16 times higher than buad rate generally. The following picture use 4 times as example.
+
+![image](media/uart_receiver.png)
+
+##### Flow Control
+
+2 handshake interface:
+
+- RTS(require to send)/CTS(clear to send)
+- DTR(Data Terminal Ready)/DSR(Data Set Ready)
+  
+![image](media/uart_fc.png)
+
+##### Register Table
+
+![image](media/uart_reg.png)
+![image](media/uart_reg2.png)
+
+### Flash Controller
+
+NOR Flash interface
+
+![image](media/flash_if.png)
+
+read sequence
+
+![image](media/flash_rd_seq.png)

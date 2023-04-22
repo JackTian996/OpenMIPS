@@ -27,7 +27,7 @@ module pc_reg
   always @(posedge clk)
   begin : PC_PROC
     if (ce == `ChipDisable)
-      pc <= 32'h0;
+      pc <= 32'h30000000;  // flash mem space
     else if (flush == 1'b1)
       pc <= excep_vector;
     else if (stall[0] == `NoStop)
