@@ -36,9 +36,9 @@
 
 ### Registers
 
-![image](./media/cp0_status_reg.png)
-![image](./media/cp0_cause_reg.png)
-![image](./media/exccode.png)
+![image](.//media/cp0_status_reg.png)
+![image](.//media/cp0_cause_reg.png)
+![image](.//media/exccode.png)
 
 ## Exception Relative Instruction Implement
 
@@ -63,7 +63,7 @@ registers are cleared to zero,and fetch instruction from address 0x0.
 
 **Exception Victim**: the instruction occur exception.
 **Problem**: To support precise interrupt,the sequence of exception occurence must be same with the sequence of instruction.
-**Solution**: The previous exception get marked, rather than being handled immediately, and the pipeline keep going.
+**Solution**: The previous exception get marked, rather than being handled im/mediately, and the pipeline keep going.
 For most processor,there is a special pipeline stage to handle exception.
 Although the exception can occur at random time, the instruction must arrive at same stage in order.
 
@@ -79,7 +79,7 @@ Although the exception can occur at random time, the instruction must arrive at 
 | Tr            |  0x40           |
 
 ***
-![image](./media/exception_handle_routine.svg "exception_handle_routine")
+![image](.//media/exception_handle_routine.svg "exception_handle_routine")
 
 - ERET instruction is processed as special exception
 - suport exception nesting
@@ -89,7 +89,7 @@ Although the exception can occur at random time, the instruction must arrive at 
 
 ### Pratical OpenMIPS design target
 
-![image](media/fpga.png)
+![image](/media/fpga.png)
 
 ### Wishbone interface introduction
 
@@ -97,19 +97,19 @@ OpenMIPS support Wishbone B2
 
 #### Wishbone signals and connection
 
-![image](media/wishbone_connection.png)
+![image](/media/wishbone_connection.png)
 
 #### Wishbone Sinagle Read Sequence
 
-![image](media/wishbone_read.png)
+![image](/media/wishbone_read.png)
 
 #### Wishbone Sinagle Write Sequence
 
-![image](media/wishbone_read.png)!
+![image](/media/wishbone_read.png)!
 
 #### Wishbone Bus Bridge
 
-![image](media/wishbone_bus_if.png)
+![image](/media/wishbone_bus_if.png)
 
 ***
 **Note: stall_req_from_if should stall pc,if,id(stall[5:0] = 6'b000111), so that branch instruction can keep order with delayslot instruction.**
@@ -118,7 +118,7 @@ OpenMIPS support Wishbone B2
 
 ### SOPC MicroArch
 
-![image](media/sopc_microarch.png)
+![image](/media/sopc_microarch.png)
 
 ### WB_CONMAX
 
@@ -128,7 +128,7 @@ OpenMIPS support Wishbone B2
 - support multiple communicate between master and slave at one time
 - support Wishbone B2
 
-![image](media/wb_conmax.png)
+![image](/media/wb_conmax.png)
 
 WB_CONMAX use high 4 bit address to deceide slave number. So each slave can have max 256M space.
 
@@ -154,7 +154,7 @@ WB_CONMAX use high 4 bit address to deceide slave number. So each slave can have
 
 ##### UART Data Format
 
-![image](media/uart.png)
+![image](/media/uart.png)
 
 UART buad rate: 9600,19200,38400 etc.
 
@@ -162,7 +162,7 @@ UART buad rate: 9600,19200,38400 etc.
 
 Receiver use higher sample frequency than buad rate, 16 times higher than buad rate generally. The following picture use 4 times as example.
 
-![image](media/uart_receiver.png)
+![image](/media/uart_receiver.png)
 
 ##### Flow Control
 
@@ -171,19 +171,19 @@ Receiver use higher sample frequency than buad rate, 16 times higher than buad r
 - RTS(require to send)/CTS(clear to send)
 - DTR(Data Terminal Ready)/DSR(Data Set Ready)
   
-![image](media/uart_fc.png)
+![image](/media/uart_fc.png)
 
 ##### Register Table
 
-![image](media/uart_reg.png)
-![image](media/uart_reg2.png)
+![image](/media/uart_reg.png)
+![image](/media/uart_reg2.png)
 
 ### Flash Controller
 
 NOR Flash interface
 
-![image](media/flash_if.png)
+![image](/media/flash_if.png)
 
 read sequence
 
-![image](media/flash_rd_seq.png)
+![image](/media/flash_rd_seq.png)
