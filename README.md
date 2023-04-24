@@ -36,9 +36,9 @@
 
 ### Registers
 
-![image](.//media/cp0_status_reg.png)
-![image](.//media/cp0_cause_reg.png)
-![image](.//media/exccode.png)
+![image](/media/cp0_status_reg.png)
+![image](/media/cp0_cause_reg.png)
+![image](/media/exccode.png)
 
 ## Exception Relative Instruction Implement
 
@@ -79,7 +79,7 @@ Although the exception can occur at random time, the instruction must arrive at 
 | Tr            |  0x40           |
 
 ***
-![image](.//media/exception_handle_routine.svg "exception_handle_routine")
+![image](/media/exception_handle_routine.svg "exception_handle_routine")
 
 - ERET instruction is processed as special exception
 - suport exception nesting
