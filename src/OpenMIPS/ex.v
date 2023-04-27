@@ -339,12 +339,12 @@ assign reg1_i_not            = ~reg1_i;
 // --------------------> CLZ/CLO
 assign clz_data_i            = (aluop_i == `EXE_CLZ_OP) ? reg1_i : (~reg1_i);
 
-MIPS_CLZ
+mips_clz
 #(
     .DATA_WIDTH                        (32                                     ),
     .DATA_WIDTH_LOG2                   (5                                      )
  )
-U_MIPS_CLZ
+u_mips_clz
 (
     .data_i                            (clz_data_i                             ),
     .res_o                             (clz_res_tmp                            )

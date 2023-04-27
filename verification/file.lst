@@ -1,25 +1,20 @@
-+incdir+/home/ICer/ic_prjs/open_mips/module
-// --------------------> CBB list
-/home/ICer/ic_prjs/open_mips/cbb/mips_clz.v
-/home/ICer/ic_prjs/open_mips/cbb/mips_div.v
-// --------------------> Module list
-/home/ICer/ic_prjs/open_mips/module/defines.v
-/home/ICer/ic_prjs/open_mips/module/ex_mem.v
-/home/ICer/ic_prjs/open_mips/module/ex.v
-/home/ICer/ic_prjs/open_mips/module/id_ex.v
-/home/ICer/ic_prjs/open_mips/module/id.v
-/home/ICer/ic_prjs/open_mips/module/if_id.v
-/home/ICer/ic_prjs/open_mips/module/inst_rom.v
-/home/ICer/ic_prjs/open_mips/module/data_ram.v
-/home/ICer/ic_prjs/open_mips/module/llbit_reg.v
-/home/ICer/ic_prjs/open_mips/module/cp0_reg.v
-/home/ICer/ic_prjs/open_mips/module/mem.v
-/home/ICer/ic_prjs/open_mips/module/mem_wb.v
-/home/ICer/ic_prjs/open_mips/module/pc_reg.v
-/home/ICer/ic_prjs/open_mips/module/regfile.v
-/home/ICer/ic_prjs/open_mips/module/hilo_reg.v
-/home/ICer/ic_prjs/open_mips/module/stall_ctrl.v
-/home/ICer/ic_prjs/open_mips/module/ram2wishbone_sync_bridge.v
-/home/ICer/ic_prjs/open_mips/module/openmips.v
-///home/ICer/ic_prjs/open_mips/module/openmips_min_scop.v
-///home/ICer/ic_prjs/open_mips/tb/openmips_min_scop_tb.sv
++libext+.v
+
++incdir+$PRJDIR/cbb
++incdir+$PRJDIR/src/flash
++incdir+$PRJDIR/src/gpio
++incdir+$PRJDIR/src/sdram_controller
++incdir+$PRJDIR/src/uart
++incdir+$PRJDIR/src/wb_conmax
++incdir+$PRJDIR/src/OpenMIPS
+
+-y $PRJDIR/cbb
+-y $PRJDIR/src/flash
+-y $PRJDIR/src/gpio
+-y $PRJDIR/src/sdram_controller
+-y $PRJDIR/src/uart
+-y $PRJDIR/src/wb_conmax
+-y $PRJDIR/src/OpenMIPS
+// --------------------> top wrapper
+$PRJDIR/src/openmips_min_scop.v
+//$PRJDIR/tb/openmips_min_scop_tb.sv

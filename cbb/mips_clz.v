@@ -10,7 +10,7 @@
 `ifndef _MIPS_CLZ_V__
 `define _MIPS_CLZ_V__
 
-module MIPS_CLZ
+module mips_clz
    #(
     parameter DATA_WIDTH                       = 32,
     parameter DATA_WIDTH_LOG2                  = 5

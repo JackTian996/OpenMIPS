@@ -8,63 +8,46 @@
 //
 // ---********************************************************************------
 `include "defines.v"
+`include "gpio_defines.v"
+`include "sdrc_define.v"
+`include "uart_defines.v"
+`include "wb_conmax_defines.v"
+
 module openmips_min_scop
     (
+    output                                       sdr_clk_o,
     /*AUTOINOUT*/
     // Beginning of automatic inouts (from unused autoinst inouts)
-    inout                           [SDR_DW-1:0] sdr_dq,                       // To/From u_sdrc_top of sdrc_top.v
+    inout                                 [15:0] sdr_dq,                       // To/From u_sdrc_top of sdrc_top.v
     // End of automatics
       /*AUTOINPUT*/
       // Beginning of automatic inputs (from unused autoinst inputs)
-    input                                 [31:0] aux_i,                        // To u_gpio_top of gpio_top.v
-    input                                  [1:0] cfg_colbits,                  // To u_sdrc_top of sdrc_top.v
-    input                                  [1:0] cfg_req_depth,                // To u_sdrc_top of sdrc_top.v
-    input                                  [2:0] cfg_sdr_cas,                  // To u_sdrc_top of sdrc_top.v
-    input                                        cfg_sdr_en,                   // To u_sdrc_top of sdrc_top.v
-    input                                 [12:0] cfg_sdr_mode_reg,             // To u_sdrc_top of sdrc_top.v
-    input              [`SDR_RFSH_ROW_CNT_W-1:0] cfg_sdr_rfmax,                // To u_sdrc_top of sdrc_top.v
-    input                [`SDR_RFSH_TIMER_W-1:0] cfg_sdr_rfsh,                 // To u_sdrc_top of sdrc_top.v
-    input                                  [3:0] cfg_sdr_tras_d,               // To u_sdrc_top of sdrc_top.v
-    input                                  [3:0] cfg_sdr_trcar_d,              // To u_sdrc_top of sdrc_top.v
-    input                                  [3:0] cfg_sdr_trcd_d,               // To u_sdrc_top of sdrc_top.v
-    input                                  [3:0] cfg_sdr_trp_d,                // To u_sdrc_top of sdrc_top.v
-    input                                  [3:0] cfg_sdr_twr_d,                // To u_sdrc_top of sdrc_top.v
-    input                                  [1:0] cfg_sdr_width,                // To u_sdrc_top of sdrc_top.v
     input                                        clk,                          // To u_openmips of openmips.v, ...
-    input                                        clk_pad_i,                    // To u_gpio_top of gpio_top.v
-    input                                        cts_pad_i,                    // To u_uart_top of uart_top.v
-    input                                        dcd_pad_i,                    // To u_uart_top of uart_top.v
-    input                                        dsr_pad_i,                    // To u_uart_top of uart_top.v
-    input                                 [31:0] ext_pad_i,                    // To u_gpio_top of gpio_top.v
     input                                  [7:0] flash_dat_i,                  // To u_flash_top of flash_top.v
-    input                                        ri_pad_i,                     // To u_uart_top of uart_top.v
+    input                                 [15:0] gpio_i,                       // To u_gpio_top of gpio_top.v
     input                                        rst,                          // To u_openmips of openmips.v, ...
-    input                                        srx_pad_i,                    // To u_uart_top of uart_top.v
+    input                                        uart_rx,                      // To u_uart_top of uart_top.v
       // End of automatics
       /*AUTOOUTPUT*/
       // Beginning of automatic outputs (from unused autoinst outputs)
-    output                                       baud_o,                       // From u_uart_top of uart_top.v
-    output                                       dtr_pad_o,                    // From u_uart_top of uart_top.v
-    output                                [31:0] ext_pad_o,                    // From u_gpio_top of gpio_top.v
-    output                                [31:0] ext_padoe_o,                  // From u_gpio_top of gpio_top.v
     output                                [31:0] flash_adr_o,                  // From u_flash_top of flash_top.v
     output                                       flash_ce,                     // From u_flash_top of flash_top.v
     output                                       flash_oe,                     // From u_flash_top of flash_top.v
     output                                       flash_rst,                    // From u_flash_top of flash_top.v
     output                                       flash_we,                     // From u_flash_top of flash_top.v
-    output                                       rts_pad_o,                    // From u_uart_top of uart_top.v
+    output                                [31:0] gpio_o,                       // From u_gpio_top of gpio_top.v
     output                                [12:0] sdr_addr,                     // From u_sdrc_top of sdrc_top.v
     output                                 [1:0] sdr_ba,                       // From u_sdrc_top of sdrc_top.v
     output                                       sdr_cas_n,                    // From u_sdrc_top of sdrc_top.v
     output                                       sdr_cke,                      // From u_sdrc_top of sdrc_top.v
     output                                       sdr_cs_n,                     // From u_sdrc_top of sdrc_top.v
-    output                          [SDR_BW-1:0] sdr_dqm,                      // From u_sdrc_top of sdrc_top.v
-    output                                       sdr_init_done,                // From u_sdrc_top of sdrc_top.v
+    output                                 [1:0] sdr_dqm,                      // From u_sdrc_top of sdrc_top.v
     output                                       sdr_ras_n,                    // From u_sdrc_top of sdrc_top.v
     output                                       sdr_we_n,                     // From u_sdrc_top of sdrc_top.v
-    output                                       stx_pad_o                     // From u_uart_top of uart_top.v
+    output                                       uart_tx                       // From u_uart_top of uart_top.v
       // End of automatics
     );
+
 // -----------------------------------------------------------------------------
 // Constant Parameter
 // -----------------------------------------------------------------------------
@@ -92,15 +75,15 @@ wire                                       [3:0] m1_sel_i;                     /
 wire                                             m1_stb_i;                     // From u_openmips of openmips.v
 wire                                             m1_we_i;                      // From u_openmips of openmips.v
 wire                                             s0_ack_i;                     // From u_sdrc_top of sdrc_top.v
-wire                                      [31:0] s0_addr_o;                    // From u_wb_conmax_top of wb_conmax_top.v
+wire                                      [25:0] s0_addr_o;                    // From u_wb_conmax_top of wb_conmax_top.v
 wire                                             s0_cyc_o;                     // From u_wb_conmax_top of wb_conmax_top.v
-wire                                    [dw-1:0] s0_data_i;                    // From u_sdrc_top of sdrc_top.v
+wire                                      [31:0] s0_data_i;                    // From u_sdrc_top of sdrc_top.v
 wire                                      [31:0] s0_data_o;                    // From u_wb_conmax_top of wb_conmax_top.v
 wire                                       [3:0] s0_sel_o;                     // From u_wb_conmax_top of wb_conmax_top.v
 wire                                             s0_stb_o;                     // From u_wb_conmax_top of wb_conmax_top.v
 wire                                             s0_we_o;                      // From u_wb_conmax_top of wb_conmax_top.v
 wire                                             s1_ack_i;                     // From u_uart_top of uart_top.v
-wire                                      [31:0] s1_addr_o;                    // From u_wb_conmax_top of wb_conmax_top.v
+wire                                       [4:0] s1_addr_o;                    // From u_wb_conmax_top of wb_conmax_top.v
 wire                                             s1_cyc_o;                     // From u_wb_conmax_top of wb_conmax_top.v
 wire                                      [31:0] s1_data_i;                    // From u_uart_top of uart_top.v
 wire                                      [31:0] s1_data_o;                    // From u_wb_conmax_top of wb_conmax_top.v
@@ -108,7 +91,7 @@ wire                                       [3:0] s1_sel_o;                     /
 wire                                             s1_stb_o;                     // From u_wb_conmax_top of wb_conmax_top.v
 wire                                             s1_we_o;                      // From u_wb_conmax_top of wb_conmax_top.v
 wire                                             s2_ack_i;                     // From u_gpio_top of gpio_top.v
-wire                                      [31:0] s2_addr_o;                    // From u_wb_conmax_top of wb_conmax_top.v
+wire                                       [7:0] s2_addr_o;                    // From u_wb_conmax_top of wb_conmax_top.v
 wire                                             s2_cyc_o;                     // From u_wb_conmax_top of wb_conmax_top.v
 wire                                      [31:0] s2_data_i;                    // From u_gpio_top of gpio_top.v
 wire                                      [31:0] s2_data_o;                    // From u_wb_conmax_top of wb_conmax_top.v
@@ -124,8 +107,12 @@ wire                                      [31:0] s3_data_o;                    /
 wire                                       [3:0] s3_sel_o;                     // From u_wb_conmax_top of wb_conmax_top.v
 wire                                             s3_stb_o;                     // From u_wb_conmax_top of wb_conmax_top.v
 wire                                             s3_we_o;                      // From u_wb_conmax_top of wb_conmax_top.v
+wire                                             sdr_init_done;                // From u_sdrc_top of sdrc_top.v
 wire                                             timer_intr;                   // From u_openmips of openmips.v
 wire                                             uart_intr;                    // From u_uart_top of uart_top.v
+wire                                       [5:0] unused_s0_addr_o;             // From u_wb_conmax_top of wb_conmax_top.v
+wire                                      [26:0] unused_s1_addr_o;             // From u_wb_conmax_top of wb_conmax_top.v
+wire                                      [23:0] unused_s2_addr_o;             // From u_wb_conmax_top of wb_conmax_top.v
 // End of automatics
 // -----------------------------------------------------------------------------
 // Main Code
@@ -133,6 +120,9 @@ wire                                             uart_intr;                    /
 // ***************************************
 // OpenMIPS : mem->m0 pc->m1
 // ***************************************
+// -------------------->WB_ADDR_WIDTH = 32
+// -------------------->WB_DATA_WIDTH = 32
+
   /*openmips AUTO_TEMPLATE (
     .clk                               (clk                                    ),
     .rst_n                             (rst                                    ),
@@ -141,7 +131,7 @@ wire                                             uart_intr;                    /
     .pc_wishbone_\(.*\)_o              (m1_\1_i[]                              ),
     .pc_wishbone_\(.*\)_i              (m1_\1_o[]                              ),
     .timer_intr_o                      (timer_intr                             ),
-    .intr_i                            ({3'b000,gpio_intr,uart_intr,timer_intr}),
+    .intr_i                            ({3'b000,gpio_intr,uart_intr,timer_intr} ),
     );*/
 
   openmips u_openmips (
@@ -162,7 +152,7 @@ wire                                             uart_intr;                    /
     .timer_intr_o                      (timer_intr                             ), // Templated
                        // Inputs
     .clk                               (clk                                    ), // Templated
-    .intr_i                            ({3'b000,gpio_intr,uart_intr,timer_intr}), // Templated
+    .intr_i                            ({3'b000,gpio_intr,uart_intr,timer_intr} ), // Templated
     .mem_wishbone_ack_i                (m0_ack_o                               ), // Templated
     .mem_wishbone_data_i               (m0_data_o[31:0]                        ), // Templated
     .pc_wishbone_ack_i                 (m1_ack_o                               ), // Templated
@@ -178,74 +168,102 @@ wire                                             uart_intr;                    /
     .sdram_clk                         (clk                                    ),
     .sdram_resetn                      (~rst                                   ),
 
-    .wb_cti_i                          ('0                                     ),
+    .wb_addr_i                         ({s0_addr_o[25:2],2'b00}                ),
+    .wb_cti_i                          ({@"vl-width"{1'b0}}                    ),
     .wb_dat_i                          (s0_data_o[]                            ),
     .wb_dat_o                          (s0_data_i[]                            ),
     .wb_\(.*\)_i                       (s0_\1_o[]                              ),
     .wb_\(.*\)_o                       (s0_\1_i[]                              ),
 
+    .cfg_sdr_width                     (2'b01                                  ),
+    .cfg_colbits                       (2'b00                                  ),
+    .cfg_req_depth                     (2'b11                                  ),
+    .cfg_sdr_en                        (1'b1                                   ),
+    .cfg_sdr_mode_reg                  (13'b0000000110001                      ),
+    .cfg_sdr_tras_d                    (4'b1000                                ),
+    .cfg_sdr_trp_d                     (4'b0010                                ),
+    .cfg_sdr_trcd_d                    (4'b0010                                ),
+    .cfg_sdr_cas                       (3'b100                                 ),
+    .cfg_sdr_trcar_d                   (4'b1010                                ),
+    .cfg_sdr_twr_d                     (4'b0010                                ),
+    .cfg_sdr_rfsh                      (12'b011010011000                       ),
+    .cfg_sdr_rfmax                     (3'b100                                 ),
    );*/
 
-  sdrc_top u_sdrc_top (
+  sdrc_top
+  #(
+    .APP_AW                            (26                                     ),
+    .dw                                (32                                     ),
+    .SDR_DW                            (16                                     ), // SDR Data Width
+    .SDR_BW                            (2                                      ) // SDR Byte Width
+  )
+  u_sdrc_top (
   /*AUTOINST*/
-                       // Outputs
+              // Outputs
     .wb_ack_o                          (s0_ack_i                               ), // Templated
-    .wb_dat_o                          (s0_data_i[dw-1:0]                      ), // Templated
+    .wb_dat_o                          (s0_data_i[31:0]                        ), // Templated
     .sdr_cke                           (sdr_cke                                ),
     .sdr_cs_n                          (sdr_cs_n                               ),
     .sdr_ras_n                         (sdr_ras_n                              ),
     .sdr_cas_n                         (sdr_cas_n                              ),
     .sdr_we_n                          (sdr_we_n                               ),
-    .sdr_dqm                           (sdr_dqm[SDR_BW-1:0]                    ),
+    .sdr_dqm                           (sdr_dqm[1:0]                           ),
     .sdr_ba                            (sdr_ba[1:0]                            ),
     .sdr_addr                          (sdr_addr[12:0]                         ),
     .sdr_init_done                     (sdr_init_done                          ),
-                       // Inouts
-    .sdr_dq                            (sdr_dq[SDR_DW-1:0]                     ),
-                       // Inputs
+              // Inouts
+    .sdr_dq                            (sdr_dq[15:0]                           ),
+              // Inputs
     .sdram_clk                         (clk                                    ), // Templated
     .sdram_resetn                      (~rst                                   ), // Templated
-    .cfg_sdr_width                     (cfg_sdr_width[1:0]                     ),
-    .cfg_colbits                       (cfg_colbits[1:0]                       ),
+    .cfg_sdr_width                     (2'b01                                  ), // Templated
+    .cfg_colbits                       (2'b00                                  ), // Templated
     .wb_rst_i                          (rst                                    ), // Templated
     .wb_clk_i                          (clk                                    ), // Templated
     .wb_stb_i                          (s0_stb_o                               ), // Templated
-    .wb_addr_i                         (s0_addr_o[APP_AW-1:0]                  ), // Templated
+    .wb_addr_i                         ({s0_addr_o[25:2],2'b00}                ), // Templated
     .wb_we_i                           (s0_we_o                                ), // Templated
-    .wb_dat_i                          (s0_data_o[dw-1:0]                      ), // Templated
-    .wb_sel_i                          (s0_sel_o[dw/8-1:0]                     ), // Templated
+    .wb_dat_i                          (s0_data_o[31:0]                        ), // Templated
+    .wb_sel_i                          (s0_sel_o[3:0]                          ), // Templated
     .wb_cyc_i                          (s0_cyc_o                               ), // Templated
-    .wb_cti_i                          ('0                                     ), // Templated
-    .cfg_sdr_tras_d                    (cfg_sdr_tras_d[3:0]                    ),
-    .cfg_sdr_trp_d                     (cfg_sdr_trp_d[3:0]                     ),
-    .cfg_sdr_trcd_d                    (cfg_sdr_trcd_d[3:0]                    ),
-    .cfg_sdr_en                        (cfg_sdr_en                             ),
-    .cfg_req_depth                     (cfg_req_depth[1:0]                     ),
-    .cfg_sdr_mode_reg                  (cfg_sdr_mode_reg[12:0]                 ),
-    .cfg_sdr_cas                       (cfg_sdr_cas[2:0]                       ),
-    .cfg_sdr_trcar_d                   (cfg_sdr_trcar_d[3:0]                   ),
-    .cfg_sdr_twr_d                     (cfg_sdr_twr_d[3:0]                     ),
-    .cfg_sdr_rfsh                      (cfg_sdr_rfsh[`SDR_RFSH_TIMER_W-1:0]    ),
-    .cfg_sdr_rfmax                     (cfg_sdr_rfmax[`SDR_RFSH_ROW_CNT_W-1:0] ));
+    .wb_cti_i                          ({3{1'b0}}                              ), // Templated
+    .cfg_sdr_tras_d                    (4'b1000                                ), // Templated
+    .cfg_sdr_trp_d                     (4'b0010                                ), // Templated
+    .cfg_sdr_trcd_d                    (4'b0010                                ), // Templated
+    .cfg_sdr_en                        (1'b1                                   ), // Templated
+    .cfg_req_depth                     (2'b11                                  ), // Templated
+    .cfg_sdr_mode_reg                  (13'b0000000110001                      ), // Templated
+    .cfg_sdr_cas                       (3'b100                                 ), // Templated
+    .cfg_sdr_trcar_d                   (4'b1010                                ), // Templated
+    .cfg_sdr_twr_d                     (4'b0010                                ), // Templated
+    .cfg_sdr_rfsh                      (12'b011010011000                       ), // Templated
+    .cfg_sdr_rfmax                     (3'b100                                 )); // Templated
 
+assign sdr_clk_o             = clk;
 // ***************************************
 // UART s1
 // ***************************************
+// --------------------> WB_ADDR_WIDTH = 5
+// --------------------> WB_DATA_WIDTH = 32
+
 /*uart_top AUTO_TEMPLATE (
     .wb_clk_i                          (clk                                    ),
     .wb_rst_i                          (rst                                    ),
-    .wb_adr_i                          (s1_addr_o[]                            ),
+    .wb_adr_i                          (s1_addr_o[4:0]                         ),
     .wb_dat_i                          (s1_data_o[]                            ),
     .wb_dat_o                          (s1_data_i[]                            ),
     .wb_\(.*\)_i                       (s1_\1_o[]                              ),
     .wb_\(.*\)_o                       (s1_\1_i[]                              ),
     .int_o                             (uart_intr                              ),
+    .stx_pad_o                         (uart_tx[]                              ),
+    .srx_pad_i                         (uart_rx[]                              ),
+    ..*                                (@"(if (equal vl-dir \\"input\\") (concat \\"{\\" (concat vl-width \\"{1'b0}}\\")) \\"\\")"),
   );*/
 
 uart_top
 #(
     .uart_data_width                   (32                                     ),
-    .uart_addr_width                   (32                                     )
+    .uart_addr_width                   (5                                      )
 )
 u_uart_top (
 /*AUTOINST*/
@@ -253,44 +271,52 @@ u_uart_top (
     .wb_dat_o                          (s1_data_i[31:0]                        ), // Templated
     .wb_ack_o                          (s1_ack_i                               ), // Templated
     .int_o                             (uart_intr                              ), // Templated
-    .stx_pad_o                         (stx_pad_o                              ),
-    .rts_pad_o                         (rts_pad_o                              ),
-    .dtr_pad_o                         (dtr_pad_o                              ),
-    .baud_o                            (baud_o                                 ),
+    .stx_pad_o                         (uart_tx                                ), // Templated
+    .rts_pad_o                         (                                       ), // Templated
+    .dtr_pad_o                         (                                       ), // Templated
+    //.baud_o                            (                                       ), // Templated
             // Inputs
     .wb_clk_i                          (clk                                    ), // Templated
     .wb_rst_i                          (rst                                    ), // Templated
-    .wb_adr_i                          (s1_addr_o[31:0]                        ), // Templated
+    .wb_adr_i                          (s1_addr_o[4:0]                         ), // Templated
     .wb_dat_i                          (s1_data_o[31:0]                        ), // Templated
     .wb_we_i                           (s1_we_o                                ), // Templated
     .wb_stb_i                          (s1_stb_o                               ), // Templated
     .wb_cyc_i                          (s1_cyc_o                               ), // Templated
     .wb_sel_i                          (s1_sel_o[3:0]                          ), // Templated
-    .srx_pad_i                         (srx_pad_i                              ),
-    .cts_pad_i                         (cts_pad_i                              ),
-    .dsr_pad_i                         (dsr_pad_i                              ),
-    .ri_pad_i                          (ri_pad_i                               ),
-    .dcd_pad_i                         (dcd_pad_i                              ));
+    .srx_pad_i                         (uart_rx                                ), // Templated
+    .cts_pad_i                         ({1{1'b0}}                              ), // Templated
+    .dsr_pad_i                         ({1{1'b0}}                              ), // Templated
+    .ri_pad_i                          ({1{1'b0}}                              ), // Templated
+    .dcd_pad_i                         ({1{1'b0}}                              )); // Templated
 
 // ***************************************
 // GPIO s2
 // ***************************************
+// --------------------> WB_ADDR_WIDTH = 8
+// --------------------> WB_DATA_WIDTH = 32
+// --------------------> GPIO_PIN = 32
+
 /*gpio_top AUTO_TEMPLATE (
     .wb_clk_i                          (clk                                    ),
     .wb_rst_i                          (rst                                    ),
-    .wb_adr_i                          (s2_addr_o[]                            ),
+    .wb_adr_i                          (s2_addr_o[7:0]                         ),
     .wb_dat_i                          (s2_data_o[]                            ),
     .wb_dat_o                          (s2_data_i[]                            ),
     .wb_inta_o                         (gpio_intr                              ),
     .wb_\(.*\)_i                       (s2_\1_o[]                              ),
     .wb_\(.*\)_o                       (s2_\1_i[]                              ),
-
+    .ext_pad_i                         ({15'b0,sdr_init_done,gpio_i[15:0]}     ),
+    .ext_pad_o                         (gpio_o[]                               ),
+    .ext_padoe_o                       (                                       ),
+    .aux_i                             ({@"vl-width"{1'b0}}                    ),
+    .clk_pad_i                         ({@"vl-width"{1'b0}}                    ),
   );*/
 
 gpio_top
 #(
     .dw                                (32                                     ),
-    .aw                                (32                                     ),
+    .aw                                (8                                      ),
     .gw                                (32                                     )
 )
 u_gpio_top (
@@ -300,24 +326,27 @@ u_gpio_top (
     .wb_ack_o                          (s2_ack_i                               ), // Templated
     .wb_err_o                          (s2_err_i                               ), // Templated
     .wb_inta_o                         (gpio_intr                              ), // Templated
-    .ext_pad_o                         (ext_pad_o[31:0]                        ),
-    .ext_padoe_o                       (ext_padoe_o[31:0]                      ),
+    .ext_pad_o                         (gpio_o[31:0]                           ), // Templated
+    .ext_padoe_o                       (                                       ), // Templated
             // Inputs
     .wb_clk_i                          (clk                                    ), // Templated
     .wb_rst_i                          (rst                                    ), // Templated
     .wb_cyc_i                          (s2_cyc_o                               ), // Templated
-    .wb_adr_i                          (s2_addr_o[31:0]                        ), // Templated
+    .wb_adr_i                          (s2_addr_o[7:0]                         ), // Templated
     .wb_dat_i                          (s2_data_o[31:0]                        ), // Templated
     .wb_sel_i                          (s2_sel_o[3:0]                          ), // Templated
     .wb_we_i                           (s2_we_o                                ), // Templated
     .wb_stb_i                          (s2_stb_o                               ), // Templated
-    .aux_i                             (aux_i[31:0]                            ),
-    .ext_pad_i                         (ext_pad_i[31:0]                        ),
-    .clk_pad_i                         (clk_pad_i                              ));
+    //.aux_i                             ({32{1'b0}}                             ), // Templated
+    //.clk_pad_i                         ({1{1'b0}}                              )); // Templated
+    .ext_pad_i                         ({15'b0,sdr_init_done,gpio_i[15:0]}     )); // Templated
 
 // ***************************************
 // FLASH s3
 // ***************************************
+// --------------------> WB_ADDR_WIDTH = 32
+// --------------------> WB_DATA_WIDTH = 32
+
 /*flash_top AUTO_TEMPLATE (
     .wb_clk_i                          (clk                                    ),
     .wb_rst_i                          (rst                                    ),
@@ -362,14 +391,18 @@ u_flash_top (
   /*wb_conmax_top AUTO_TEMPLATE (
     .clk_i                             (clk                                    ),
     .rst_i                             (rst                                    ),
+
+    .s0_addr_o                         ({unused_s0_addr_o[5:0],s0_addr_o[25:0]} ),
+    .s1_addr_o                         ({unused_s1_addr_o[26:0],s1_addr_o[4:0]} ),
+    .s2_addr_o                         ({unused_s2_addr_o[23:0],s2_addr_o[7:0]} ),
     .m[01]_err_o                       (                                       ),
     .m[01]_rty_o                       (                                       ),
-    .s[013]_err_i                      ('0                                     ),
-    .s[0123]_rty_i                     ('0                                     ),
+    .s[013]_err_i                      ({@"vl-width"{1'b0}}                    ),
+    .s[0123]_rty_i                     ({@"vl-width"{1'b0}}                    ),
 
-    .m[2-7].*                          (@"(if (equal vl-dir \\"input\\") \\"'0\\" \\"\\")"),
-    .s[4-9].*                          (@"(if (equal vl-dir \\"input\\") \\"'0\\" \\"\\")"),
-    .s1[0-5].*                         (@"(if (equal vl-dir \\"input\\") \\"'0\\" \\"\\")"),
+    .m[2-7].*                          (@"(if (equal vl-dir \\"input\\") (concat \\"{\\" (concat vl-width \\"{1'b0}}\\")) \\"\\")"),
+    .s[4-9].*                          (@"(if (equal vl-dir \\"input\\") (concat \\"{\\" (concat vl-width \\"{1'b0}}\\")) \\"\\")"),
+    .s1[0-5].*                         (@"(if (equal vl-dir \\"input\\") (concat \\"{\\" (concat vl-width \\"{1'b0}}\\")) \\"\\")"),
     );*/
 
   wb_conmax_top
@@ -414,19 +447,19 @@ u_flash_top (
     .m7_err_o                          (                                       ), // Templated
     .m7_rty_o                          (                                       ), // Templated
     .s0_data_o                         (s0_data_o[31:0]                        ),
-    .s0_addr_o                         (s0_addr_o[31:0]                        ),
+    .s0_addr_o                         ({unused_s0_addr_o[5:0],s0_addr_o[25:0]} ), // Templated
     .s0_sel_o                          (s0_sel_o[3:0]                          ),
     .s0_we_o                           (s0_we_o                                ),
     .s0_cyc_o                          (s0_cyc_o                               ),
     .s0_stb_o                          (s0_stb_o                               ),
     .s1_data_o                         (s1_data_o[31:0]                        ),
-    .s1_addr_o                         (s1_addr_o[31:0]                        ),
+    .s1_addr_o                         ({unused_s1_addr_o[26:0],s1_addr_o[4:0]} ), // Templated
     .s1_sel_o                          (s1_sel_o[3:0]                          ),
     .s1_we_o                           (s1_we_o                                ),
     .s1_cyc_o                          (s1_cyc_o                               ),
     .s1_stb_o                          (s1_stb_o                               ),
     .s2_data_o                         (s2_data_o[31:0]                        ),
-    .s2_addr_o                         (s2_addr_o[31:0]                        ),
+    .s2_addr_o                         ({unused_s2_addr_o[23:0],s2_addr_o[7:0]} ), // Templated
     .s2_sel_o                          (s2_sel_o[3:0]                          ),
     .s2_we_o                           (s2_we_o                                ),
     .s2_cyc_o                          (s2_cyc_o                               ),
@@ -524,106 +557,106 @@ u_flash_top (
     .m1_we_i                           (m1_we_i                                ),
     .m1_cyc_i                          (m1_cyc_i                               ),
     .m1_stb_i                          (m1_stb_i                               ),
-    .m2_data_i                         ('0                                     ), // Templated
-    .m2_addr_i                         ('0                                     ), // Templated
-    .m2_sel_i                          ('0                                     ), // Templated
-    .m2_we_i                           ('0                                     ), // Templated
-    .m2_cyc_i                          ('0                                     ), // Templated
-    .m2_stb_i                          ('0                                     ), // Templated
-    .m3_data_i                         ('0                                     ), // Templated
-    .m3_addr_i                         ('0                                     ), // Templated
-    .m3_sel_i                          ('0                                     ), // Templated
-    .m3_we_i                           ('0                                     ), // Templated
-    .m3_cyc_i                          ('0                                     ), // Templated
-    .m3_stb_i                          ('0                                     ), // Templated
-    .m4_data_i                         ('0                                     ), // Templated
-    .m4_addr_i                         ('0                                     ), // Templated
-    .m4_sel_i                          ('0                                     ), // Templated
-    .m4_we_i                           ('0                                     ), // Templated
-    .m4_cyc_i                          ('0                                     ), // Templated
-    .m4_stb_i                          ('0                                     ), // Templated
-    .m5_data_i                         ('0                                     ), // Templated
-    .m5_addr_i                         ('0                                     ), // Templated
-    .m5_sel_i                          ('0                                     ), // Templated
-    .m5_we_i                           ('0                                     ), // Templated
-    .m5_cyc_i                          ('0                                     ), // Templated
-    .m5_stb_i                          ('0                                     ), // Templated
-    .m6_data_i                         ('0                                     ), // Templated
-    .m6_addr_i                         ('0                                     ), // Templated
-    .m6_sel_i                          ('0                                     ), // Templated
-    .m6_we_i                           ('0                                     ), // Templated
-    .m6_cyc_i                          ('0                                     ), // Templated
-    .m6_stb_i                          ('0                                     ), // Templated
-    .m7_data_i                         ('0                                     ), // Templated
-    .m7_addr_i                         ('0                                     ), // Templated
-    .m7_sel_i                          ('0                                     ), // Templated
-    .m7_we_i                           ('0                                     ), // Templated
-    .m7_cyc_i                          ('0                                     ), // Templated
-    .m7_stb_i                          ('0                                     ), // Templated
+    .m2_data_i                         ({32{1'b0}}                             ), // Templated
+    .m2_addr_i                         ({32{1'b0}}                             ), // Templated
+    .m2_sel_i                          ({4{1'b0}}                              ), // Templated
+    .m2_we_i                           ({1{1'b0}}                              ), // Templated
+    .m2_cyc_i                          ({1{1'b0}}                              ), // Templated
+    .m2_stb_i                          ({1{1'b0}}                              ), // Templated
+    .m3_data_i                         ({32{1'b0}}                             ), // Templated
+    .m3_addr_i                         ({32{1'b0}}                             ), // Templated
+    .m3_sel_i                          ({4{1'b0}}                              ), // Templated
+    .m3_we_i                           ({1{1'b0}}                              ), // Templated
+    .m3_cyc_i                          ({1{1'b0}}                              ), // Templated
+    .m3_stb_i                          ({1{1'b0}}                              ), // Templated
+    .m4_data_i                         ({32{1'b0}}                             ), // Templated
+    .m4_addr_i                         ({32{1'b0}}                             ), // Templated
+    .m4_sel_i                          ({4{1'b0}}                              ), // Templated
+    .m4_we_i                           ({1{1'b0}}                              ), // Templated
+    .m4_cyc_i                          ({1{1'b0}}                              ), // Templated
+    .m4_stb_i                          ({1{1'b0}}                              ), // Templated
+    .m5_data_i                         ({32{1'b0}}                             ), // Templated
+    .m5_addr_i                         ({32{1'b0}}                             ), // Templated
+    .m5_sel_i                          ({4{1'b0}}                              ), // Templated
+    .m5_we_i                           ({1{1'b0}}                              ), // Templated
+    .m5_cyc_i                          ({1{1'b0}}                              ), // Templated
+    .m5_stb_i                          ({1{1'b0}}                              ), // Templated
+    .m6_data_i                         ({32{1'b0}}                             ), // Templated
+    .m6_addr_i                         ({32{1'b0}}                             ), // Templated
+    .m6_sel_i                          ({4{1'b0}}                              ), // Templated
+    .m6_we_i                           ({1{1'b0}}                              ), // Templated
+    .m6_cyc_i                          ({1{1'b0}}                              ), // Templated
+    .m6_stb_i                          ({1{1'b0}}                              ), // Templated
+    .m7_data_i                         ({32{1'b0}}                             ), // Templated
+    .m7_addr_i                         ({32{1'b0}}                             ), // Templated
+    .m7_sel_i                          ({4{1'b0}}                              ), // Templated
+    .m7_we_i                           ({1{1'b0}}                              ), // Templated
+    .m7_cyc_i                          ({1{1'b0}}                              ), // Templated
+    .m7_stb_i                          ({1{1'b0}}                              ), // Templated
     .s0_data_i                         (s0_data_i[31:0]                        ),
     .s0_ack_i                          (s0_ack_i                               ),
-    .s0_err_i                          ('0                                     ), // Templated
-    .s0_rty_i                          ('0                                     ), // Templated
+    .s0_err_i                          ({1{1'b0}}                              ), // Templated
+    .s0_rty_i                          ({1{1'b0}}                              ), // Templated
     .s1_data_i                         (s1_data_i[31:0]                        ),
     .s1_ack_i                          (s1_ack_i                               ),
-    .s1_err_i                          ('0                                     ), // Templated
-    .s1_rty_i                          ('0                                     ), // Templated
+    .s1_err_i                          ({1{1'b0}}                              ), // Templated
+    .s1_rty_i                          ({1{1'b0}}                              ), // Templated
     .s2_data_i                         (s2_data_i[31:0]                        ),
     .s2_ack_i                          (s2_ack_i                               ),
     .s2_err_i                          (s2_err_i                               ),
-    .s2_rty_i                          ('0                                     ), // Templated
+    .s2_rty_i                          ({1{1'b0}}                              ), // Templated
     .s3_data_i                         (s3_data_i[31:0]                        ),
     .s3_ack_i                          (s3_ack_i                               ),
-    .s3_err_i                          ('0                                     ), // Templated
-    .s3_rty_i                          ('0                                     ), // Templated
-    .s4_data_i                         ('0                                     ), // Templated
-    .s4_ack_i                          ('0                                     ), // Templated
-    .s4_err_i                          ('0                                     ), // Templated
-    .s4_rty_i                          ('0                                     ), // Templated
-    .s5_data_i                         ('0                                     ), // Templated
-    .s5_ack_i                          ('0                                     ), // Templated
-    .s5_err_i                          ('0                                     ), // Templated
-    .s5_rty_i                          ('0                                     ), // Templated
-    .s6_data_i                         ('0                                     ), // Templated
-    .s6_ack_i                          ('0                                     ), // Templated
-    .s6_err_i                          ('0                                     ), // Templated
-    .s6_rty_i                          ('0                                     ), // Templated
-    .s7_data_i                         ('0                                     ), // Templated
-    .s7_ack_i                          ('0                                     ), // Templated
-    .s7_err_i                          ('0                                     ), // Templated
-    .s7_rty_i                          ('0                                     ), // Templated
-    .s8_data_i                         ('0                                     ), // Templated
-    .s8_ack_i                          ('0                                     ), // Templated
-    .s8_err_i                          ('0                                     ), // Templated
-    .s8_rty_i                          ('0                                     ), // Templated
-    .s9_data_i                         ('0                                     ), // Templated
-    .s9_ack_i                          ('0                                     ), // Templated
-    .s9_err_i                          ('0                                     ), // Templated
-    .s9_rty_i                          ('0                                     ), // Templated
-    .s10_data_i                        ('0                                     ), // Templated
-    .s10_ack_i                         ('0                                     ), // Templated
-    .s10_err_i                         ('0                                     ), // Templated
-    .s10_rty_i                         ('0                                     ), // Templated
-    .s11_data_i                        ('0                                     ), // Templated
-    .s11_ack_i                         ('0                                     ), // Templated
-    .s11_err_i                         ('0                                     ), // Templated
-    .s11_rty_i                         ('0                                     ), // Templated
-    .s12_data_i                        ('0                                     ), // Templated
-    .s12_ack_i                         ('0                                     ), // Templated
-    .s12_err_i                         ('0                                     ), // Templated
-    .s12_rty_i                         ('0                                     ), // Templated
-    .s13_data_i                        ('0                                     ), // Templated
-    .s13_ack_i                         ('0                                     ), // Templated
-    .s13_err_i                         ('0                                     ), // Templated
-    .s13_rty_i                         ('0                                     ), // Templated
-    .s14_data_i                        ('0                                     ), // Templated
-    .s14_ack_i                         ('0                                     ), // Templated
-    .s14_err_i                         ('0                                     ), // Templated
-    .s14_rty_i                         ('0                                     ), // Templated
-    .s15_data_i                        ('0                                     ), // Templated
-    .s15_ack_i                         ('0                                     ), // Templated
-    .s15_err_i                         ('0                                     ), // Templated
-    .s15_rty_i                         ('0                                     )); // Templated
+    .s3_err_i                          ({1{1'b0}}                              ), // Templated
+    .s3_rty_i                          ({1{1'b0}}                              ), // Templated
+    .s4_data_i                         ({32{1'b0}}                             ), // Templated
+    .s4_ack_i                          ({1{1'b0}}                              ), // Templated
+    .s4_err_i                          ({1{1'b0}}                              ), // Templated
+    .s4_rty_i                          ({1{1'b0}}                              ), // Templated
+    .s5_data_i                         ({32{1'b0}}                             ), // Templated
+    .s5_ack_i                          ({1{1'b0}}                              ), // Templated
+    .s5_err_i                          ({1{1'b0}}                              ), // Templated
+    .s5_rty_i                          ({1{1'b0}}                              ), // Templated
+    .s6_data_i                         ({32{1'b0}}                             ), // Templated
+    .s6_ack_i                          ({1{1'b0}}                              ), // Templated
+    .s6_err_i                          ({1{1'b0}}                              ), // Templated
+    .s6_rty_i                          ({1{1'b0}}                              ), // Templated
+    .s7_data_i                         ({32{1'b0}}                             ), // Templated
+    .s7_ack_i                          ({1{1'b0}}                              ), // Templated
+    .s7_err_i                          ({1{1'b0}}                              ), // Templated
+    .s7_rty_i                          ({1{1'b0}}                              ), // Templated
+    .s8_data_i                         ({32{1'b0}}                             ), // Templated
+    .s8_ack_i                          ({1{1'b0}}                              ), // Templated
+    .s8_err_i                          ({1{1'b0}}                              ), // Templated
+    .s8_rty_i                          ({1{1'b0}}                              ), // Templated
+    .s9_data_i                         ({32{1'b0}}                             ), // Templated
+    .s9_ack_i                          ({1{1'b0}}                              ), // Templated
+    .s9_err_i                          ({1{1'b0}}                              ), // Templated
+    .s9_rty_i                          ({1{1'b0}}                              ), // Templated
+    .s10_data_i                        ({32{1'b0}}                             ), // Templated
+    .s10_ack_i                         ({1{1'b0}}                              ), // Templated
+    .s10_err_i                         ({1{1'b0}}                              ), // Templated
+    .s10_rty_i                         ({1{1'b0}}                              ), // Templated
+    .s11_data_i                        ({32{1'b0}}                             ), // Templated
+    .s11_ack_i                         ({1{1'b0}}                              ), // Templated
+    .s11_err_i                         ({1{1'b0}}                              ), // Templated
+    .s11_rty_i                         ({1{1'b0}}                              ), // Templated
+    .s12_data_i                        ({32{1'b0}}                             ), // Templated
+    .s12_ack_i                         ({1{1'b0}}                              ), // Templated
+    .s12_err_i                         ({1{1'b0}}                              ), // Templated
+    .s12_rty_i                         ({1{1'b0}}                              ), // Templated
+    .s13_data_i                        ({32{1'b0}}                             ), // Templated
+    .s13_ack_i                         ({1{1'b0}}                              ), // Templated
+    .s13_err_i                         ({1{1'b0}}                              ), // Templated
+    .s13_rty_i                         ({1{1'b0}}                              ), // Templated
+    .s14_data_i                        ({32{1'b0}}                             ), // Templated
+    .s14_ack_i                         ({1{1'b0}}                              ), // Templated
+    .s14_err_i                         ({1{1'b0}}                              ), // Templated
+    .s14_rty_i                         ({1{1'b0}}                              ), // Templated
+    .s15_data_i                        ({32{1'b0}}                             ), // Templated
+    .s15_ack_i                         ({1{1'b0}}                              ), // Templated
+    .s15_err_i                         ({1{1'b0}}                              ), // Templated
+    .s15_rty_i                         ({1{1'b0}}                              )); // Templated
 // -----------------------------------------------------------------------------
 // Assertion Declarations
 // -----------------------------------------------------------------------------
@@ -634,6 +667,15 @@ endmodule
 
 // ---********************************************************************------
 // Local Variables:
-// verilog-library-directories:("." "OpenMIPS" "flash" "gpio" "uart" "wb_conmax" "sdram_controller")
+// verilog-library-flags:("-f ../verification/file.lst")
 // verilog-auto-inst-param-value:t
+// verilog-auto-output-ignore-regexp: ""
+// eval:(setq verilog-auto-output-ignore-regexp (concat
+// "^\\("
+// "unused.*"
+// "\\|unconnected.*"
+// "\\)$"
+// ))
+// eval:(verilog-read-defines)
+// eval:(verilog-read-includes)
 // End:
