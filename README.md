@@ -25,7 +25,9 @@
         - [UART Data Format](#uart-data-format)
         - [UART Receiver](#uart-receiver)
         - [Flow Control](#flow-control)
-        - [Register Table](#register-table)
+        - [UART16550 IP Introduction](#uart16550-ip-introduction)
+          - [Register Table](#register-table)
+          - [Calculate Divisor](#calculate-divisor)
     - [Flash Controller](#flash-controller)
 
 <!-- /code_chunk_output -->
@@ -63,7 +65,7 @@ registers are cleared to zero,and fetch instruction from address 0x0.
 
 **Exception Victim**: the instruction occur exception.
 **Problem**: To support precise interrupt,the sequence of exception occurence must be same with the sequence of instruction.
-**Solution**: The previous exception get marked, rather than being handled im/mediately, and the pipeline keep going.
+**Solution**: The previous exception get marked, rather than being handled immediately, and the pipeline keep going.
 For most processor,there is a special pipeline stage to handle exception.
 Although the exception can occur at random time, the instruction must arrive at same stage in order.
 
@@ -164,6 +166,12 @@ Receiver use higher sample frequency than buad rate, 16 times higher than buad r
 
 ![image](/media/uart_receiver.png)
 
+  (a) check the start bit when received signal High to Low level
+  (b) after 2 cycle, check the signal, if keep low level, it is the correct start bit, otherwise assume it's error. ignore the signal
+  (c) wait 4 cycle from correct start bit, capture the LSB
+  (d) capture 1 bit of data and parity every 4 cycle, so always capture data in the middle, it can be stable
+  (e) check the stop bit
+
 ##### Flow Control
 
 2 handshake interface:
@@ -173,10 +181,26 @@ Receiver use higher sample frequency than buad rate, 16 times higher than buad r
   
 ![image](/media/uart_fc.png)
 
-##### Register Table
+##### UART16550 IP Introduction
+
+- Compatible with National Semiconductor 16550A device
+- Support Wishbone B
+- Configurable 32/8 Wishbone data width
+
+###### Register Table
 
 ![image](/media/uart_reg.png)
 ![image](/media/uart_reg2.png)
+
+NOTE: when Line Control Register(LCR) bit7 = 1, BASE+0x0, Base+0x1 is 2 divisor registers, otherwise represent the initial registers.
+
+###### Calculate Divisor
+
+2 divsior register compose a 16 bit frequency division factor.
+
+**Factor = System Clk Freq / (16 * Buad Rate)**
+
+When programming, set the high byte Divisor Latch Byte 2 firstly, and then set the low byte Divisor Latch Byte 1.
 
 ### Flash Controller
 

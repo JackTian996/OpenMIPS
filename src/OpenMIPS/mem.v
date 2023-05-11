@@ -220,6 +220,12 @@ begin
           2'b10: wdata_o     = {{24{mem_data_i[15]}},mem_data_i[15:8]};
           default: wdata_o   = {{24{mem_data_i[7]}},mem_data_i[7:0]};
         endcase
+        case (mem_addr_i[1:0])
+          2'b00: mem_sel_o   = 4'b1000;
+          2'b01: mem_sel_o   = 4'b0100;
+          2'b10: mem_sel_o   = 4'b0010;
+          default: mem_sel_o   = 4'b0000;
+        endcase
       end
       `EXE_LBU_OP:
       begin
@@ -232,6 +238,12 @@ begin
           2'b10: wdata_o     = {{24{1'b0}},mem_data_i[15:8]};
           default: wdata_o = {{24{1'b0}},mem_data_i[7:0]}; //2'b11
         endcase
+        case (mem_addr_i[1:0])
+          2'b00: mem_sel_o   = 4'b1000;
+          2'b01: mem_sel_o   = 4'b0100;
+          2'b10: mem_sel_o   = 4'b0010;
+          default: mem_sel_o   = 4'b0000;
+        endcase
       end
       `EXE_LH_OP:
       begin
@@ -241,6 +253,10 @@ begin
         case (mem_addr_i[1:0])
           2'b00: wdata_o     = {{16{mem_data_i[31]}},mem_data_i[31:16]};
           default: wdata_o = {{16{mem_data_i[15]}},mem_data_i[15:0]}; //2'b10
+        endcase
+        case (mem_addr_i[1:0])
+          2'b00: wdata_o     = 4'b1100;
+          default: wdata_o = 4'b0011; //2'b10
         endcase
       end
       `EXE_LHU_OP:
@@ -252,19 +268,25 @@ begin
           2'b00: wdata_o     = {{16{1'b0}},mem_data_i[31:16]};
           default: wdata_o = {{16{1'b0}},mem_data_i[15:0]}; //2'b10
         endcase
+        case (mem_addr_i[1:0])
+          2'b00: wdata_o     = 4'b1100;
+          default: wdata_o = 4'b0011; //2'b10
+        endcase
       end
       `EXE_LW_OP:
       begin
         mem_ce_o             = `ChipEnable;
         mem_we_tmp           = `WriteDisable;
         mem_addr_o           = mem_addr_i;
-        wdata_o              = mem_data_i; //2'b10
+        wdata_o              = mem_data_i;
+        mem_sel_o            = 4'b1111;
       end
       `EXE_LWL_OP:
       begin
         mem_ce_o             = `ChipEnable;
         mem_we_tmp           = `WriteDisable;
         mem_addr_o           = mem_addr_i;
+        mem_sel_o            = 4'b1111;
         case (mem_addr_i[1:0])
           2'b00: wdata_o     = mem_data_i;
           2'b01: wdata_o     = {mem_data_i[23:0],reg2_i[7:0]};
@@ -277,6 +299,7 @@ begin
         mem_ce_o             = `ChipEnable;
         mem_we_tmp           = `WriteDisable;
         mem_addr_o           = mem_addr_i;
+        mem_sel_o            = 4'b1111;
         case (mem_addr_i[1:0])
           2'b00: wdata_o     = {reg2_i[31:8],mem_data_i[31:24]};
           2'b01: wdata_o     = {reg2_i[31:16],mem_data_i[31:16]};
@@ -379,6 +402,7 @@ begin
         mem_we_tmp           = `WriteDisable;
         mem_addr_o           = mem_addr_i;
         wdata_o              = mem_data_i; //2'b10
+        mem_sel_o            = 4'b1111;
         //step2: write llbit 1
         llbit_we_o           = `WriteEnable;
         llbit_value_o        = 1'b1;

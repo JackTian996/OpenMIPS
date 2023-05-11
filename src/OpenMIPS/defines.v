@@ -6,8 +6,8 @@
 `define AluSelBus            2:0
 `define InstValid            1'b0
 `define InstInvalid          1'b1
-`define RstEnable            1'b1
-`define RstDisable           1'b0
+`define RstEnable            1'b0   // low_active
+`define RstDisable           1'b1
 `define ChipEnable           1'b1
 `define ChipDisable          1'b0
 `define WriteEnable          1'b1

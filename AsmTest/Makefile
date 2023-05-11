@@ -14,7 +14,7 @@ export	CROSS_COMPILE
 # Rules of Compilation
 # ********************
 
-all: inst_rom.om inst_rom.bin inst_rom.asm inst_rom.data
+all: inst_rom.om inst_rom.bin inst_rom.asm inst_rom.data inst_rom.mif inst_rom.coe
 
 %.o: %.S
 	$(CC) -mips32 $< -o $@
@@ -26,5 +26,10 @@ inst_rom.asm: inst_rom.om
 	$(OBJDUMP) -D $< > $@
 inst_rom.data: inst_rom.bin
 	./Bin2Mem.exe -f $< -o $@
+inst_rom.mif: inst_rom.bin
+	./Bin2Mif.exe -f $< -o $@
+inst_rom.coe: inst_rom.data
+	./Mem2Coe.py $<
+
 clean:
-	rm -f *.o *.om *.bin *.data *.mif *.asm
+	rm -f *.o *.om *.bin *.data *.mif *.asm *.coe

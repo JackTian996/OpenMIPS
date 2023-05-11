@@ -1,4 +1,6 @@
 +libext+.v
+-ssy
+-ssv
 
 +incdir+$PRJDIR/cbb
 +incdir+$PRJDIR/src/flash
@@ -16,5 +18,8 @@
 -y $PRJDIR/src/wb_conmax
 -y $PRJDIR/src/OpenMIPS
 // --------------------> top wrapper
-$PRJDIR/src/openmips_min_scop.v
-//$PRJDIR/tb/openmips_min_scop_tb.sv
+//$PRJDIR/src/openmips_min_scop.v       // Altera DE2
+$PRJDIR/src/openmips_min_scop_sram.v    // Xilinx zynq7010
+$PRJDIR/src/openmips_min_scop_sram_top.v  // integrate sram
+//$PRJDIR/tb/openmips_min_scop_tb.sv    // sim
+$PRJDIR/tb/openmips_min_scop_sram_top_tb.sv    // sim
