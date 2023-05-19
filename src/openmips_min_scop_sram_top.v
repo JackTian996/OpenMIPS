@@ -88,13 +88,16 @@ openmips_min_scop_sram u_openmips_min_scop (
     .data_i                            (data_ram_data_o[]                      ),
     .data_o                            (data_ram_data_i[]                      ),
   );*/
-  data_ram u_data_ram (
+  data_ram
+  #(
+    .REG_OUT                           (1                                      )
+  )
+    u_data_ram (
   /*AUTOINST*/
                        // Outputs
     .data_o                            (data_ram_data_i[`DataBus]              ), // Templated
                        // Inputs
     .clk                               (clk                                    ),
-    .rst_n                             (rst_n                                  ),
     .ce                                (data_ram_ce_o                          ), // Templated
     .we                                (data_ram_we_o                          ), // Templated
     .addr                              (data_ram_addr_o[`DataAddrBus]          ), // Templated
@@ -107,11 +110,16 @@ openmips_min_scop_sram u_openmips_min_scop (
     .addr                              (inst_ram_addr_o[]                      ),
     );*/
 
-  inst_rom u_inst_rom (
+  inst_rom
+  #(
+    .REG_OUT                           (1                                      )
+  )
+    u_inst_rom (
     /*AUTOINST*/
                        // Outputs
     .inst                              (inst_ram_data_i[`InstBus]              ), // Templated
                        // Inputs
+    .clk                               (clk                                    ),
     .ce                                (inst_ram_ce_o                          ), // Templated
     .addr                              (inst_ram_addr_o[`InstAddrBus]          )); // Templated
 

@@ -9,7 +9,11 @@
 // ---********************************************************************------
 `include "defines.v"
 module inst_rom
+   #(
+    parameter REG_OUT                          = 1
+    )
     (
+    input                                        clk,
     input                                        ce,
     input                         [`InstAddrBus] addr,
     output reg                        [`InstBus] inst
@@ -35,13 +39,24 @@ initial
       $display("%h",inst_mem[n]);
   end
 
-always @(*)
-begin : INST_PROC
-  if (ce == `ChipDisable)
-    inst                     = `ZeroWord;
-  else
-    inst                     = inst_mem[addr[`InstMemNumLog2+1:2]];
+generate
+if (REG_OUT == 0) begin : REG_OUT_C0_GEN
+  always @(*)
+  begin : INST_PROC
+    if (ce == `ChipDisable)
+      inst                     = `ZeroWord;
+    else
+      inst                     = inst_mem[addr[`InstMemNumLog2+1:2]];
+  end
 end
+else begin : REG_OUT_C1_GEN
+  always @(posedge clk)
+  begin : INST_PROC
+    if (ce == `ChipEnable)
+      inst                     <= inst_mem[addr[`InstMemNumLog2+1:2]];
+  end
+end
+endgenerate
 
 // -----------------------------------------------------------------------------
 // Assertion Declarations

@@ -7,6 +7,7 @@
 // Description:
 //
 // ---********************************************************************------
+`include "defines.v"
 module stall_ctrl
     (
     input                                        rst_n,

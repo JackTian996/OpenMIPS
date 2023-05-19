@@ -46,7 +46,11 @@ wire                                  [`InstBus] rom_data_i;                   /
     .addr                              (rom_addr_o[]                           ),
     );*/
 
-  inst_rom u_inst_rom (
+  inst_rom
+  #(
+    .REG_OUT                           (0                                      )
+  )
+  u_inst_rom (
     /*AUTOINST*/
                        // Outputs
     .inst                              (rom_data_i[`InstBus]                   ), // Templated
@@ -62,13 +66,16 @@ wire                                  [`InstBus] rom_data_i;                   /
     .data_i                            (mem_data_o[]                           ),
     .data_o                            (mem_data_i[]                           ),
   );*/
-  data_ram u_data_ram (
+  data_ram
+  (
+    .REG_OUT                           (0                                      )
+  )
+    u_data_ram (
     /*AUTOINST*/
                        // Outputs
     .data_o                            (mem_data_i[`DataBus]                   ), // Templated
                        // Inputs
     .clk                               (clk                                    ),
-    .rst_n                             (rst_n                                  ),
     .ce                                (mem_ce_o                               ), // Templated
     .we                                (mem_we_o                               ), // Templated
     .addr                              (mem_addr_o[`DataAddrBus]               ), // Templated

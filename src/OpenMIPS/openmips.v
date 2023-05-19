@@ -786,7 +786,7 @@ mips_div
    #(
     .OPDATA_WIDTH                      (32                                     ),
     .CNT_WIDTH                         (6                                      ),
-    .RST_ENABLE                        (1                                      )
+    .RST_ENABLE                        (0                                      )
     )
 u_mips_div (
 /*AUTOINST*/

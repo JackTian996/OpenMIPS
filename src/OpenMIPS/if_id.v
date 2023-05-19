@@ -14,7 +14,7 @@ module if_id (
   output reg                      id_rom_ce
 );
 
-  always @(posedge clk or rst_n)
+  always @(posedge clk or negedge rst_n)
   begin
     if (rst_n == `RstEnable)
     begin

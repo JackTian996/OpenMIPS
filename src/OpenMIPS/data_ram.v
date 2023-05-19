@@ -8,9 +8,11 @@
 //
 // ---********************************************************************------
 module data_ram
+   #(
+    parameter REG_OUT                          = 1
+    )
     (
     input                                        clk,
-    input                                        rst_n,
     input                                        ce,
     input                                        we,
     input                         [`DataAddrBus] addr,
@@ -48,16 +50,30 @@ begin : DATA_MEM_PROC
   end
 end
 
-always @(*)
-begin : DATA_OUT_PROC
-  if ((ce == `ChipEnable) && (we == `WriteDisable))
-    data_o                   = {data_mem3[addr[`DataMemNumLog2+1:2]],
-                                data_mem2[addr[`DataMemNumLog2+1:2]],
-                                data_mem1[addr[`DataMemNumLog2+1:2]],
-                                data_mem0[addr[`DataMemNumLog2+1:2]]};
-  else
-    data_o                   = `ZeroWord;
+generate
+if (REG_OUT == 0) begin : REG_OUT_C0_GEN
+  always @(*)
+  begin : DATA_OUT_PROC
+    if ((ce == `ChipEnable) && (we == `WriteDisable))
+      data_o                   = {data_mem3[addr[`DataMemNumLog2+1:2]],
+                                  data_mem2[addr[`DataMemNumLog2+1:2]],
+                                  data_mem1[addr[`DataMemNumLog2+1:2]],
+                                  data_mem0[addr[`DataMemNumLog2+1:2]]};
+    else
+      data_o                   = `ZeroWord;
+  end
 end
+else begin : REG_OUT_C1_GEN
+  always @(posedge clk)
+  begin : DATA_OUT_PROC
+    if ((ce == `ChipEnable) && (we == `WriteDisable))
+      data_o                  <= {data_mem3[addr[`DataMemNumLog2+1:2]],
+                                  data_mem2[addr[`DataMemNumLog2+1:2]],
+                                  data_mem1[addr[`DataMemNumLog2+1:2]],
+                                  data_mem0[addr[`DataMemNumLog2+1:2]]};
+  end
+end
+endgenerate
 
 // -----------------------------------------------------------------------------
 // Assertion Declarations
