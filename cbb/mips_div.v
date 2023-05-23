@@ -14,7 +14,7 @@ module mips_div
    #(
     parameter OPDATA_WIDTH                     = 32,
     parameter CNT_WIDTH                        = 6,                            // log(OPDATA_WIDTH) + 1
-    parameter RST_ENABLE                       = 1
+    parameter RST_ENABLE                       = 0
     )
     (
     input                                        clk,
@@ -98,7 +98,7 @@ always @(posedge clk or negedge rst_n)
 begin : CNT_PROC
   if (rst_n == RST_ENABLE)
     cnt                      <= {CNT_WIDTH{1'b0}};
-  if ((state == DIV_FREE) && (state_nxt == DIV_ON))
+  else if ((state == DIV_FREE) && (state_nxt == DIV_ON))
     cnt                      <= {CNT_WIDTH{1'b0}};
   else if (state == DIV_ON)
     cnt                      <= cnt + 1'b1;

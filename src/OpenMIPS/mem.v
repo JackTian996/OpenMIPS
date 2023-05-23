@@ -426,6 +426,9 @@ begin
         else
           wdata_o            = 32'b0;
       end
+      default:
+        begin
+        end
     endcase //aluop
   end //if
 end //always

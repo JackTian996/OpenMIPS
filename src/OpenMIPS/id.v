@@ -76,8 +76,6 @@ reg                                    [`RegBus] imm;
 wire                                       [4:0] rs;
 wire                                       [4:0] rt;
 wire                                       [4:0] rd;
-wire                                       [4:0] shamt;
-wire                                       [5:0] funct;
 wire                                       [4:0] op2;
 wire                                       [5:0] op3;
 wire                                       [4:0] op4;
@@ -95,8 +93,6 @@ assign op4                   = inst_i[20:16];
 assign rs                    = inst_i[25:21];
 assign rt                    = inst_i[20:16];
 assign rd                    = inst_i[15:11];
-assign shamt                 = inst_i[10:6];
-assign funct                 = inst_i[5:0];
 
 assign pc_plus_4             = pc_i + 4;
 assign pc_plus_8             = pc_i + 8;
@@ -233,7 +229,6 @@ begin
               begin
                 aluop_o      = `EXE_NOP_OP;
                 alusel_o     = `EXE_RES_NOP;
-                wd_o         = `ZeroWord;
                 wreg_o       = `WriteDisable;
                 instvalid    = `InstValid;
                 reg1_read_o  = `ReadDisable;
@@ -283,8 +278,7 @@ begin
               begin
                 aluop_o      = `EXE_MTHI_OP;
                 //alusel_o   = `EXE_RES_MOVE;
-                wd_o         = `ZeroWord;
-                //wreg_o     = `WriteDisable;
+                wreg_o     = `WriteDisable;
                 instvalid    = `InstValid;
                 reg1_read_o  = `ReadEnable;
                 reg2_read_o  = `ReadDisable;
@@ -293,8 +287,7 @@ begin
               begin
                 aluop_o      = `EXE_MTLO_OP;
                 //alusel_o   = `EXE_RES_MOVE;
-                wd_o         = `ZeroWord;
-                //wreg_o     = `WriteDisable;
+                wreg_o     = `WriteDisable;
                 instvalid    = `InstValid;
                 reg1_read_o  = `ReadEnable;
                 reg2_read_o  = `ReadDisable;
@@ -540,7 +533,6 @@ begin
       begin
         aluop_o              = `EXE_NOP_OP;
         alusel_o             = `EXE_RES_NOP;
-        wd_o                 = `ZeroWord;
         wreg_o               = `WriteDisable;
         instvalid            = `InstValid;
         reg1_read_o          = `ReadDisable;

@@ -114,21 +114,25 @@ end
 assign timer_intr_o          = timer_intr;
 
 // --------------------> Status
+// avoid latch
+always @(*)
+begin
+  CoprocesUse                = 4'b0001; //which copro avail
+  ReducePower                = 1'b0;  //low power
+  ResetEadian                = 1'b0;  //1: change
+  TlbShutdown                = 1'b0;
+  UserMode                   = 1'b0;  //1: kernel; 0: user
+  ExcpDataErr                = 1'b0;  //parity or ECC data check
+end
+
 always @(posedge clk or negedge rst_n)
 begin : STATUS_PROC
   if (rst_n == `RstEnable)
   begin
-    CoprocesUse              <= 4'b0001; //which copro avail
-    ReducePower              <= 1'b0;  //low power
-    ResetEadian              <= 1'b0;  //1: change
     BootExcepVec             <= 1'b0;  //1: use boot excp vec; 0: general excp vec
-    TlbShutdown              <= 1'b0;
     SoftReset                <= 1'b0;  //restart from sw
     NoMaskIntr               <= 1'b0;  //restart from NMI
     IntrMask                 <= 8'b0;  //1: masked
-    UserMode                 <= 1'b0;  //1: kernel; 0: user
-    ExcpDataErr              <= 1'b0;  //parity or ECC data check
-    //ExcpLevl                 <= 1'b0;  //turn to kernel when excp and disable intr
     IntrEnable               <= 1'b0;
   end
   else if ((we_i == `WriteEnable) && (waddr_i == `CP0_REG_STATUS))
@@ -137,7 +141,6 @@ begin : STATUS_PROC
     SoftReset                <= wdata_i[20];
     NoMaskIntr               <= wdata_i[19];
     IntrMask                 <= wdata_i[15:8];
-    //ExcpLevl                 <= wdata_i[1];
     IntrEnable               <= wdata_i[0];
   end
 end
@@ -159,6 +162,14 @@ assign status_o              = {CoprocesUse,ReducePower,1'b0,ResetEadian,2'b0,Bo
                                 1'b0,ExcpDataErr,ExcpLevl,IntrEnable};
 
 // --------------------> Cause
+// avoid latch
+always @(*)
+begin
+  CoprocesErr                = 2'b0;
+  DisableCount               = 1'b0;
+  ProfCountIntr              = 1'b0;
+end
+
 always @(posedge clk or negedge rst_n)
 begin : CAUSE_PROC
   if (rst_n == `RstEnable)

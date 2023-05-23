@@ -34,7 +34,8 @@ integer n;
 
 initial
   begin
-    $readmemh ("/home/ICer/ic_prjs/open_mips/AsmTest/inst_rom.data", inst_mem);
+    //$readmemh ("/home/ICer/ic_prjs/open_mips/AsmTest/inst_rom.data", inst_mem);
+    $readmemh ("/home/ICer/ic_prjs/open_mips/AsmTest/Image.data", inst_mem);
     for(n=0;n<4;n=n+1)
       $display("%h",inst_mem[n]);
   end

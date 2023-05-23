@@ -46,6 +46,8 @@ always @(*)
 begin : STALL_PROC
   if (rst_n == `RstEnable)
     stall                    = {6{1'b0}};
+  else if (stallreq_from_mem == `Stop)
+    stall                    = 6'b011111;
   else if (stallreq_from_ex == `Stop)
     stall                    = 6'b001111;
   else if (stallreq_from_id == `Stop)
@@ -53,8 +55,6 @@ begin : STALL_PROC
   else if (stallreq_from_if == `Stop)
     // keep order branch inst and delayslot inst
     stall                    = 6'b000111;
-  else if (stallreq_from_mem == `Stop)
-    stall                    = 6'b011111;
   else
     stall                    = {6{1'b0}};
 end

@@ -128,6 +128,9 @@ msubu rs,rt : unsigned
 
 ![image](/media/madd_design.png)
 
+To avoid madd or msub perform repeatly when stall from other instruction:
+![image](/media/madd_avoid_repeat.png)
+
 div, divu
 The implemention of OPENMIPS use 32 cycle to complete divide.
 div rs,rt : {HI,LO} <- rs / rt

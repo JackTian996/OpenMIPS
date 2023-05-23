@@ -102,7 +102,6 @@ wire                                             reg1_lt_reg2;
 wire                                   [`RegBus] clz_data_i;
 wire                                   [`RegBus] clz_res_o;
 wire                                       [5:0] clz_res_tmp;
-wire                                   [`RegBus] reg1_i_not;
 wire                                             ov_sum;
 wire                                   [`RegBus] reg2_i_mux;
 wire                                   [`RegBus] result_sum;
@@ -333,9 +332,6 @@ begin : TRAPASSERT_PROC
   end
 end
 
-// --------------------> not reg1_i
-assign reg1_i_not            = ~reg1_i;
-
 // --------------------> CLZ/CLO
 assign clz_data_i            = (aluop_i == `EXE_CLZ_OP) ? reg1_i : (~reg1_i);
 
@@ -422,7 +418,8 @@ begin : MULTI_MUL_PROC
         stallreq_for_madd_msub = `Stop;
         hilo_tmp1            = {`ZeroWord,`ZeroWord};
       end
-      else if (cnt_i == 2'b01)
+      //else if (cnt_i == 2'b01) //avoid latch
+      else
       begin
         cnt_o                = 2'b10;
         hilo_tmp_o           = {`ZeroWord,`ZeroWord};
@@ -439,7 +436,8 @@ begin : MULTI_MUL_PROC
         stallreq_for_madd_msub = `Stop;
         hilo_tmp1            = {`ZeroWord,`ZeroWord};
       end
-      else if (cnt_i == 2'b01)
+      //else if (cnt_i == 2'b01) //avoid latch
+      else
       begin
         cnt_o                = 2'b10;
         hilo_tmp_o           = {`ZeroWord,`ZeroWord};

@@ -49,17 +49,6 @@ reg                                              wb_phase_cnt;
 // ---->TODO
 assign wishbone_data_o       = ram_data_i;
 
-// cnt0 phase0 : req   cnt1 phase1 : ack
-always @(posedge clk or negedge rst_n)
-begin : WB_PHASE_CNT_PROC
-  if (rst_n == 1'b0)
-    wb_phase_cnt             <= {1{1'b0}};
-  else if ((wishbone_cyc_i & wishbone_stb_i) == 1'b1)
-    wb_phase_cnt             <= wb_phase_cnt + 1'b1;
-end
-
-assign wishbone_ack_o        = (wb_phase_cnt == 1'b1) ? 1'b1 : 1'b0;
-
 generate
 if (REG_OUT == 1) begin : REG_OUT_C0_GEN
   always @ (posedge clk or negedge rst_n)

@@ -92,8 +92,8 @@ begin
     mem_whilo                <= `WriteDisable;
     mem_hi                   <= `ZeroWord;
     mem_lo                   <= `ZeroWord;
-    hilo_o                   <= hilo_i;
-    cnt_o                    <= cnt_i;
+    hilo_o                   <= {`ZeroWord,`ZeroWord};
+    cnt_o                    <= 2'b00;
     mem_mem_addr             <= `ZeroWord;
     mem_aluop                <= `EXE_NOP_OP;
     mem_reg2                 <= `ZeroWord;
