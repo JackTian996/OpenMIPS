@@ -174,14 +174,9 @@ always @(posedge clk or negedge rst_n)
 begin : CAUSE_PROC
   if (rst_n == `RstEnable)
   begin
-    //BranchDelaySlot          <= 1'b0;
-    CoprocesErr              <= 2'b0;
-    DisableCount             <= 1'b0;
-    ProfCountIntr            <= 1'b0;
     IntrVec                  <= 1'b0;
     WatchPend                <= 1'b0;
     SwIntrPend               <= 2'b0;
-    //ExcpCode                 <= 5'b0;
   end
   else if ((we_i == `WriteEnable) && (waddr_i == `CP0_REG_CAUSE))
   begin
