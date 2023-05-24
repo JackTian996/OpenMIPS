@@ -437,4 +437,30 @@ read sequence
 
 ## Altera DE2-70 FPGA Test
 
+Bootloader and SimpleOS simulate OS boot and load procedure.
+Both program are saved in flash.
+The following picture shows the position in flash.
+
+![image](/media/bootloader_in_mem.png)
+
+OpemMIPS boot procedure:
+
+- uart, gpio, sdram initial
+- read length info at 0x300
+- move SimpleOS image to sdram
+- jump to 0x0
+
+SimpleOS function:
+
+- HOST transmit data to OpenMIPS by UART
+- OpenMIPS uart receive data and assert interrupt 
+- The interrupt handler read the data and transmit back to HOST
+- HOST display the same data
+
+Here are some screenshot of lab:
+
+![image](/media/lab_fpga_compile.png)
+![image](/media/lab_signaltap2.png)
+![image](/media/lab_display.png)
+
 ## uC/OS-II Migration
