@@ -1,52 +1,12 @@
-<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
-
-<!-- code_chunk_output -->
-
-- [OPEN\_MIPS](#open_mips)
-  - [Logic/Shift/nop Instruction Implement](#logicshiftnop-instruction-implement)
-  - [Move Instruction Implement](#move-instruction-implement)
-  - [Arithmetic instruction implement](#arithmetic-instruction-implement)
-    - [simple arithmetic](#simple-arithmetic)
-    - [Stall Mechanism](#stall-mechanism)
-  - [Jump/Branch Insruction Implement](#jumpbranch-insruction-implement)
-  - [LOAD/STORE Insruction Implement](#loadstore-insruction-implement)
-    - [ll/sc](#llsc)
-    - [load relative problem](#load-relative-problem)
-  - [CP0 Access Insruction Implement](#cp0-access-insruction-implement)
-    - [CP0 Registers](#cp0-registers)
-    - [CP0 Access Instruction](#cp0-access-instruction)
-  - [Exception Relative Instruction Implement](#exception-relative-instruction-implement)
-    - [Exception in MIPS32 Arch](#exception-in-mips32-arch)
-    - [Precise Exception](#precise-exception)
-    - [Exception handle procedure](#exception-handle-procedure)
-    - [Implement details](#implement-details)
-  - [Pratical OpenMIPS](#pratical-openmips)
-    - [Pratical OpenMIPS design target](#pratical-openmips-design-target)
-    - [Wishbone interface introduction](#wishbone-interface-introduction)
-      - [Wishbone signals and connection](#wishbone-signals-and-connection)
-      - [Wishbone Sinagle Read Sequence](#wishbone-sinagle-read-sequence)
-      - [Wishbone Sinagle Write Sequence](#wishbone-sinagle-write-sequence)
-      - [Wishbone Bus Bridge](#wishbone-bus-bridge)
-  - [SOPC based Pratical OpenMIPS](#sopc-based-pratical-openmips)
-    - [SOPC MicroArch](#sopc-microarch)
-    - [WB\_CONMAX](#wb_conmax)
-    - [GPIO](#gpio)
-    - [UART Controller](#uart-controller)
-      - [UART Protocol](#uart-protocol)
-        - [UART Data Format](#uart-data-format)
-        - [UART Receiver](#uart-receiver)
-        - [Flow Control](#flow-control)
-        - [UART16550 IP Introduction](#uart16550-ip-introduction)
-          - [Register Table](#register-table)
-          - [Calculate Divisor](#calculate-divisor)
-    - [Flash Controller](#flash-controller)
-    - [SDRAM Controller](#sdram-controller)
-  - [Altera DE2-70 FPGA Test](#altera-de2-70-fpga-test)
-  - [uC/OS-II Migration](#ucos-ii-migration)
-
-<!-- /code_chunk_output -->
+[TOC]
 
 # OPEN_MIPS
+
+## ISA
+
+Instruction format in MIPS32 Arch:
+
+![image](/media/inst_format.png)
 
 ## Logic/Shift/nop Instruction Implement
 
@@ -453,14 +413,156 @@ OpemMIPS boot procedure:
 SimpleOS function:
 
 - HOST transmit data to OpenMIPS by UART
-- OpenMIPS uart receive data and assert interrupt 
+- OpenMIPS uart receive data and assert interrupt
 - The interrupt handler read the data and transmit back to HOST
 - HOST display the same data
 
 Here are some screenshot of lab:
-
 ![image](/media/lab_fpga_compile.png)
 ![image](/media/lab_signaltap2.png)
 ![image](/media/lab_display.png)
 
 ## uC/OS-II Migration
+
+### Feature
+
+- Preemptive
+  always run ready task of the higest priority
+- Multi Task
+  system give each task different priority, means can't suppurt time slice scheduling(Round-robin Scheduling)
+- Deterministic
+  Function call and service execute times are deterministic.User always know how many times the function call and service execute
+- Task Stack
+  each task has individual stack. There is a **stack space check function** to confirm space that the task need indeed
+- System Service
+  support many **system service** : semaphore, event flag, message mailbox, message queue, fixed block size memory allocate and release, time management function
+- Interrupt Handle
+  The running task will be suspended temporarily when interrupt assert. If a higher priority task is awakened by interrupt, the task will execute immediately after all nesting interrupt handler quit
+
+### Concept
+
+#### Task
+
+Task, aka thread, a simple program. uC/OS-II is a multi-thread OS. Each task is a while(1). Task has 5 status.
+
+- Dormant: task remain in memory, but is not scheduled by kernel
+- Ready: means task is ready for running, but can't run now because of lower priority. When task is created, it's in Ready status.
+- Running: task master CPU. The highest priority Ready task can get CPU and transfer to Running
+- Pending: task is waiting a EVENT(device I/O, shareble resource, timely pluse). The task is put on a WAIT List of the event.
+- Interrupt: Running task can be interrupted, otherwise the task disable interrupt. When task is interrupted, CPU jump to interrupt handler and the task go into Interrupt
+
+When system is initialized, 2 task are created automatically:
+
+- IDLE task: lowest priority, 32bit int variable +1
+- Statistic task: execute per second, collect CPU utilization rate
+
+Each task has coresponding OS_TCB that is a data structure to save status when scheduling. The first word in TCB is stack pointer.
+
+![image](/media/struct_os_tcb.png)
+
+#### Dispatch
+
+#### Context Switch
+
+#### Interrupt Handler
+
+- save all CPU registers
+- call **OSIntEnter** or variable OSIntNesting + 1 directly
+- clear interrupt src
+- re-enable interrupt
+- execute user code to  handle interrupt
+- call **OSIntExit**
+- restore all CPU registers
+- execute interrupt return inst
+
+When nesting interrupts are completed, OS must determine whether higher priority task is wake up. If so, return to higher task. Otherwise, return to the task is interrupted.
+
+#### Clock Tick
+
+Clock Tick is a periodic interrupt. It can make kernel delay a task several cycle and provide overtime determination when a task wait for event.
+
+Sequence: OSInit -> OSStart -> enable clock tick interrupt
+
+#### uC/OS-II initialize
+
+Call OSInit function to initialize all variables and data structures and create OS_TaskIdle, which is always in Ready status and has lowest priority. If allowing statistic task, the OS_TaskStat is created, which fall into Ready status and has OS_LOWEST_PRIO - 1.
+
+#### uC/OS-II start
+
+Before OS starts, at least 1 task is created. OSStart function find highest priority TCB in Ready list, then call OSStartHighRdy in os_cpu_a.S
+
+### uC/OS-II basic function
+
+#### Communication and Synchronization
+
+Task or interrupt service program can use ECB(Event COntrol Block) pass signal to other task. The signal, aka Event, can be semaphore, mailbox, message quque and so on.
+
+#### Task Management
+
+- OSTaskCreate or OSTaskCreateExt
+- OSTaskStkChk
+- OSTaskDel
+- OSTaskDelReq
+- OSTaskChangePrio
+- OSTaskSuspend
+- OSTaskResume
+- OSTaskQuery
+
+#### Time Management
+
+- OSTimeDly
+- OSTimeDlyHMSM
+- OSTimeDlyResume
+- OSTimeGet
+- OSTimeSet
+
+#### Memory Management
+
+uC/OS-II manages consecutive large size memory as sections. Each section has same size and integral memory block. However, different sections have coresponding block size.
+
+- malloc: allocate by block
+- free: return back to the section that it belones to.
+
+And the execution time is determined.
+
+OS use Memory Control Block data structure track every sections. Each section has 1 MCB.
+
+- OSMemCreate
+- OSMemGet
+- OSMemPut
+- OSMemQuery
+
+#### Dispatch(Schedule)
+
+### MIPS Function Call Standard
+
+#### Register Standard
+
+![image](/media/reg_standard.png)
+
+#### Variable Transfer
+
+**1.  use stack**
+![image](/media/stack_var_transf.png)
+**2. use register**
+a0-a3
+
+#### Return Variable
+
+Integer or pointer type return value will be placed at v0($2).
+Long long type value will also use v1($3).
+When return a structure or long value, v0 and v1 can't cover it:
+
+- caller create a memory segment and use a pointer point to it.
+- caller pass the pointer as first parameter(a0) to callee
+- callee complete and copy return value to that memory space, and use v0 point to it
+
+#### Stack Placement
+
+![image](/media/stack_place.png)
+![image](/media/task_start_stack_place.png)
+
+### Transplant
+
+![image](/media/file_org.png)
+![image](/media/file_tree.png)
