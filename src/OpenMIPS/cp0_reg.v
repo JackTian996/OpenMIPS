@@ -84,6 +84,8 @@ always @(posedge clk or negedge rst_n)
 begin : COUNT_PROC
   if (rst_n == `RstEnable)
     count                    <= {32{1'b0}};
+  else if ((we_i == `WriteEnable) && (waddr_i == `CP0_REG_COUNT))
+    count                    <= wdata_i;
   else
     count                    <= count + 1'b1;
 end
@@ -132,8 +134,8 @@ begin : STATUS_PROC
     BootExcepVec             <= 1'b0;  //1: use boot excp vec; 0: general excp vec
     SoftReset                <= 1'b0;  //restart from sw
     NoMaskIntr               <= 1'b0;  //restart from NMI
-    IntrMask                 <= 8'b0;  //1: masked
-    IntrEnable               <= 1'b0;
+    IntrMask                 <= 8'b0;  //1: no mask; 0: mask
+    IntrEnable               <= 1'b0;  //1: enable
   end
   else if ((we_i == `WriteEnable) && (waddr_i == `CP0_REG_STATUS))
   begin

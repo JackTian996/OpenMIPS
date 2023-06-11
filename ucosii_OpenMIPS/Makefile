@@ -18,7 +18,7 @@ LIBS  =	common/common.o ucos/ucos.o port/port.o
 
 #########################################################################
 
-all: ucosii.om ucosii.bin ucosii.asm OS.bin
+all: ucosii.om ucosii.bin ucosii.asm OS.bin OS.mif OS.data
 
 ucosii.om: depend subdirs $(LIBS) Makefile
 	$(CC) -Tram.ld -o $@ $(LIBS) -nostdlib $(LDFLAGS)
@@ -28,6 +28,12 @@ ucosii.bin: ucosii.om
 
 OS.bin: ucosii.bin
 	./BinMerge.exe -f $< -o $@
+
+OS.mif: OS.bin
+	./Bin2Mif.exe -f $< -o $@
+
+OS.data: OS.bin
+	./Bin2Mem.exe -f $< -o $@
 
 ucosii.asm: ucosii.om
 	mips-sde-elf-objdump -D $< > $@
@@ -45,6 +51,7 @@ clean:
 		\( -name 'core' -o -name '*.bak' -o -name '*~' \
 		-o -name '*.o'  -o -name '*.tmp' -o -name '*.hex' \
 		-o -name 'OS.bin' -o -name 'ucosii.bin' -o -name '*.srec' \
+		-o -name 'OS.mif' -o -name 'OS.data'\
 		-o -name '*.mem' -o -name '*.img' -o -name '*.out' \
 		-o -name '*.aux' -o -name '*.log' -o -name '*.data' \) -print \
 		| xargs rm -f

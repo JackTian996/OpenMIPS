@@ -65,6 +65,15 @@
       - [Return Variable](#return-variable)
       - [Stack Placement](#stack-placement)
     - [Transplant](#transplant)
+      - [os\_cpu.h](#os_cpuh)
+      - [os\_cpu\_a.S](#os_cpu_as)
+      - [os\_cpu\_c.c](#os_cpu_cc)
+  - [DEBUG](#debug)
+    - [CP0.Count](#cp0count)
+    - [ram2wishbone module](#ram2wishbone-module)
+    - [pc 22222222](#pc-22222222)
+  - [OSInitTick()](#osinittick)
+  - [Result](#result)
 
 <!-- /code_chunk_output -->
 
@@ -634,3 +643,169 @@ When return a structure or long value, v0 and v1 can't cover it:
 
 ![image](/media/file_org.png)
 ![image](/media/file_tree.png)
+
+#### os_cpu.h
+
+1. data type define
+![image](/media/data_type_define.png)
+
+2. critical region
+![image](/media/critical_region_macro.png)
+
+3. define stack growth
+![image](/media/stack_growth.png)
+
+4. task switch macro
+From lower priority taskA switch to higher taskB.
+During taskA execution, system need to execute taskB for some reason.TaskA can call **OS_TASK_SW()** macro, and then OS trap in exception handler, in which OS will look for current highest priority task wo execute.
+
+5. some function statement
+![image](/media/function_statement.png)
+
+#### os_cpu_a.S
+
+- OS_CPU_SR_Save
+- OS_CPU_SR_Restore
+- InterruptHandler
+- OSIntCtxSW
+- ExceptionHandler
+- OSStartHighRdy
+- TickInterruptClear
+- CoreTmrInit
+- TickISR
+- DisableInterruptSource
+- EnableInterruptSource
+
+1. Exception Handler
+![image](/media/exception_handler.png)
+stack section :stack space 0x10000
+_stack_addr is the initial sp(top of the stack) from ld define
+
+2. some constant
+![image](/media/constant_offset.png)
+![image](/media/constant_offset1.png)
+Register position saved in stack:
+![image](/media/constant_offset2.png)
+3. OS_CPU_SR_Save
+CPU_SR OS_CPU_SR_Save(void);
+Return Status Register value and disable IE bit
+4. OS_CPU_SR_Restore
+void OS_CPU_SR_Restore(CPU_SR sr);
+Write sr value to Status Register
+5. InterruptHandler
+
+   - push stack
+   - (OSIntNesting != 0) ? addand save sp to OSTCBCur : none, add 1
+   - INT_LOOP
+     - Read CP0.Cause.IP
+     - real interrupt ? jump to BSP_Interrupt_Handler : INT_LOOP_END
+   - INT_LOOP_END
+     - jump to OSIntExit, OSIntNesting -1
+        ![image](/media/OSIntExit_proc.png)
+        current Task goto Ready status:
+        ![image](/media/task_ready_status.png)
+     - restore context, pop stack
+   - ERET
+
+6. OSIntCtxSw
+
+   - OSTaskSwHook
+   - set current highest ready task to OSTCBCur
+   - restore context
+   - ERET
+
+7. ExceptionHandler
+
+   - push stack
+   - jump tp BSP_Exception_Handler
+   - restore context
+   - eret
+
+8. OSStartHighRdy
+  Create a task before starting, the new task is in ready status. Then OS can call OSStart() to boot. OSStart find highest task and call OSStartHighRdy to execute.
+  
+   - OSTaskSwHook
+   - set OSRunning flag
+   - restore stack
+   - **jump** to task
+  Similar with OSIntCtxSw, but it's used during OS start and use jump instruction to switch task.
+
+9. TickInterruptClear
+  clear CP0.Compare
+
+10. CoreTmrInit
+  void CoreTmrInit(CPU_INT32U tmr_reload);
+    - set CP0.Compare
+    - clear CP0.Count
+
+11. TickISR
+  When Interrupt assert, BSP_Interrupt_Handler will be called. If interrupt is timer_intr, then TickISR is called in advance. It is used to add Compare value, so the interrupt is clear and set time of next timer_intr.
+
+    - save partial register for next function call
+    - set Compare
+    - call OSTimeTick to notify OS that there is a timer interrupt
+    - restore partial register
+    - return
+12. DisableInterruptSource
+  Set CP0.Status.IM field 0 to disable specific interrupt.
+  void DisableInterruptSource(CPU_INT32 int_source);
+  ![image](/media/DisableInterruptSource.png)
+13. EnableInterruptSource
+  Set CP0.Status.IM field 1 to enable specific interrupt.
+  void EnableInterruptSource(CPU_INT32 int_source);
+  ![image](/media/EnableInterruptSource.png)
+
+#### os_cpu_c.c
+
+1. OSTaskSktInit
+  It is called by OSTaskCreate or OSTaskCreateExt to initialize stack of created task.
+  ![image](/media/init_statement.png)
+  The return value is the top of stack.
+
+   - Eenble State.IE and IM (timer)  
+   - Initialize stack
+   - return top of stack
+
+2. BSP_Interrupt_Handler
+  ![image](/media/interrupt_handler.png)
+
+3. BSP_Exception_Handler
+  ![image](/media/bsp_exception_handler.png)
+
+## DEBUG
+
+### CP0.Count
+
+Should support SW configure to initialize. Avoid first timer interrupt can only hit after Count wrap to the set value, the progress can be several minutes.
+
+### ram2wishbone module
+
+State mechine error:
+When read pc get return data and goto STALL state because of mem rd/write. Then flush assert, next clk rise edge flush pipeline and stall dessert. But pc ram2wishbone state still in STALL. The second rise edge can goto IDLE and process new pc read request. The first rise edge will miss a pc read request.
+
+So flush assert condition also can transform state mechine from STALL to IDLE.
+
+### pc 22222222
+
+![image](/media/lw_error_pc_22222222.png)
+![image](/media/error_eret_1090.png)
+
+program sequence:
+
+INTR_LOOP_END.eret -> 1090 -> j fc8 -> fc8: 8fbf002c  lw ra,44(sp)
+
+ra : 2222_2222 error
+
+![image](/media/pc_20_read_error.png)
+
+Ssram controller does not goto initial state because of flush. So read pc 0x20 error. At same time wishbone2ram module ack shift register should reset.
+
+## OSInitTick()
+
+Program should call OSInitTick() to initialize timer. Then OS schedule multiple task.
+
+## Result
+
+![image](/media/result.png)
+![image](/media/result_3task.png)
+![image](/media/result_verdi.png)

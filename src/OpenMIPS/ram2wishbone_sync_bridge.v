@@ -62,7 +62,7 @@ begin : STATE_NXT_PROC
     WB_BUSY : state_nxt      = ((flush_i == 1'b1) || ((wishbone_ack_i == 1'b1)  && (stall_i[1] == `NoStop))) ?
                                WB_IDLE :
                                ((wishbone_ack_i == 1'b1)  && (stall_i[1] == `Stop)) ? WB_STALL : state;
-    WB_STALL : state_nxt     = (stall_i[1] == `NoStop) ? WB_IDLE : state;
+    WB_STALL : state_nxt     = ((stall_i[1] == `NoStop) || (flush_i == 1'b1)) ? WB_IDLE : state;
     default : state_nxt      = WB_IDLE;
   endcase
 end

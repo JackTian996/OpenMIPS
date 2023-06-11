@@ -18,7 +18,7 @@ module data_ram
     input                         [`DataAddrBus] addr,
     input                                  [3:0] sel,
     input                             [`DataBus] data_i,
-    output reg                        [`DataBus] data_o
+    output                            [`DataBus] data_o
     );
 // -----------------------------------------------------------------------------
 // Constant Parameter
@@ -64,14 +64,17 @@ if (REG_OUT == 0) begin : REG_OUT_C0_GEN
   end
 end
 else begin : REG_OUT_C1_GEN
+  reg                            [`DataBus] data_o_tmp;
   always @(posedge clk)
   begin : DATA_OUT_PROC
     if ((ce == `ChipEnable) && (we == `WriteDisable))
-      data_o                  <= {data_mem3[addr[`DataMemNumLog2+1:2]],
+      data_o_tmp               <= {data_mem3[addr[`DataMemNumLog2+1:2]],
                                   data_mem2[addr[`DataMemNumLog2+1:2]],
                                   data_mem1[addr[`DataMemNumLog2+1:2]],
                                   data_mem0[addr[`DataMemNumLog2+1:2]]};
   end
+
+  assign data_o                = data_o_tmp;
 end
 endgenerate
 

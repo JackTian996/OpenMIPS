@@ -16,7 +16,7 @@ module openmips_min_scop_sram_top_tb ();
   initial begin
     rst_n = `RstEnable;
     #195 rst_n = `RstDisable;
-    #5000000 $finish;
+    #500000000 $finish;
   end
 
 // --------------------> Inst DUT
@@ -35,6 +35,7 @@ module openmips_min_scop_sram_top_tb ();
 
 initial	begin
 	$fsdbDumpfile("tb.fsdb");
+    //$fsdbAutoSwitchDumpfile(64, "tb.fsdb", 20);
         $fsdbDumpvars;
         $fsdbDumpMDA;
 end

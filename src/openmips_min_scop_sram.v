@@ -171,7 +171,8 @@ wishbone2ram_sync_bridge
     .ADDR_WIDTH                        (32                                     ),
     .DATA_WIDTH                        (32                                     ),
     .SEL_WIDTH                         (4                                      ),
-    .REG_OUT                           (0                                      )
+	 .READ_LATENCY                      (2                                      ),
+	 .WRITE_LATENCY                     (1                                      )
 )
 u_data_wb_bridge (
 /*AUTOINST*/
@@ -312,7 +313,8 @@ wishbone2ram_sync_bridge
     .ADDR_WIDTH                        (32                                     ),
     .DATA_WIDTH                        (32                                     ),
     .SEL_WIDTH                         (4                                      ),
-    .REG_OUT                           (0                                      )
+    .READ_LATENCY                      (1                                      ),
+	 .WRITE_LATENCY                     (1                                      )
 )
 u_inst_wb_bridge (
 /*AUTOINST*/
