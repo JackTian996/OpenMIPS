@@ -53,7 +53,7 @@ clean:
 		-o -name 'OS.bin' -o -name 'ucosii.bin' -o -name '*.srec' \
 		-o -name 'OS.mif' -o -name 'OS.data'\
 		-o -name '*.mem' -o -name '*.img' -o -name '*.out' \
-		-o -name '*.aux' -o -name '*.log' -o -name '*.data' \) -print \
+		-o -name '*.aux' -o -name '*.log'  \) -print \
 		| xargs rm -f
 	rm -f System.map
 
